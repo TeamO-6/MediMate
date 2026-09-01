@@ -108,6 +108,18 @@ def load_user(user_id):
         return User(id=user_data['id'], email=user_data['email'], full_name=user_data['full_name'])
     return None
 
+@app.before_request
+def validate_active_profile():
+    if not current_user.is_authenticated:
+        return
+    db = get_db()
+    profiles = db.execute("SELECT id, is_manager FROM profiles WHERE manager_user_id = ?", (current_user.id,)).fetchall()
+    active_profile_id = session.get('active_profile_id')
+    if not active_profile_id or not any(p['id'] == active_profile_id for p in profiles):
+        primary_profile = next((p for p in profiles if p['is_manager']), None)
+        active_profile_id = primary_profile['id'] if primary_profile else (profiles[0]['id'] if profiles else None)
+        session['active_profile_id'] = active_profile_id
+
 @app.context_processor
 def inject_global_data():
     """Endpoint/Function to Handle Inject global data."""
@@ -118,13 +130,8 @@ def inject_global_data():
     profiles = db.execute("SELECT id, profile_name, is_manager FROM profiles WHERE manager_user_id = ? ORDER BY is_manager DESC, profile_name ASC", (current_user.id,)).fetchall()
     
     active_profile_id = session.get('active_profile_id')
-    if not active_profile_id or not any(p['id'] == active_profile_id for p in profiles):
-        primary_profile = next((p for p in profiles if p['is_manager']), None)
-        active_profile_id = primary_profile['id'] if primary_profile else (profiles[0]['id'] if profiles else None)
-        session['active_profile_id'] = active_profile_id
-    
-    active_profile = None
-    if active_profile_id:
+    active_profile = next((p for p in profiles if p['id'] == active_profile_id), None)
+    if not active_profile:
         active_profile = db.execute("SELECT * FROM profiles WHERE id = ?", (active_profile_id,)).fetchone()
 
     today_name = datetime.now().strftime('%a')
@@ -456,8 +463,8 @@ def add_profile():
                 flash('Invalid date format. Please use DD-MM-YYYY.', 'danger')
                 return render_template('add_profile.html', form=form, title="Add New Dependent Profile")
         
-        db.execute('INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender) VALUES (?, ?, ?, ?)',
-                   (current_user.id, form.profile_name.data, dob_obj, form.gender.data))
+        db.execute('INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)',
+                   (current_user.id, form.profile_name.data, dob_obj, form.gender.data, 0))
         db.commit()
         flash(f'Profile for {form.profile_name.data} created.', 'success')
         return redirect(url_for('profiles'))
@@ -851,6 +858,9 @@ def delete_profile(profile_id):
     
     db.execute("DELETE FROM profiles WHERE id = ?", (profile_id,))
     db.commit()
+    
+    if session.get('active_profile_id') == profile_id:
+        session.pop('active_profile_id', None)
     
     flash(f"Profile '{profile['profile_name']}' has been deleted.", "success")
     return redirect(url_for('profiles'))
