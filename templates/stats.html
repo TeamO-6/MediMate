@@ -1,85 +1,251 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="display-6"><i class="bi bi-graph-up"></i> Your Health Stats</h1>
+<style>
+    /* Stats Page Glassmorphism & Animations */
+    .stats-header {
+        background: linear-gradient(135deg, #0d9488, #4f46e5);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        letter-spacing: -1px;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .glass-header {
+        background: transparent;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: 1.25rem 1.5rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        color: white;
+    }
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #10b981, #34d399);
+        color: white;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 350px;
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .animated-list-item {
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+    }
+    .animated-list-item:hover {
+        background-color: rgba(13, 148, 136, 0.05);
+        border-left: 3px solid #0d9488;
+        transform: translateX(4px);
+    }
+
+    /* Fade In Up Animation */
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-4 border-bottom fade-in-up">
+    <h1 class="display-5 stats-header"><i class="bi bi-graph-up-arrow me-2"></i>Health Analytics</h1>
 </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <i class="bi bi-check2-circle me-2"></i>Daily Adherence Rate (Last 7 Days)
+<div class="card glass-card mb-5 fade-in-up delay-1">
+    <div class="glass-header text-primary">
+        <i class="bi bi-activity me-2"></i>7-Day Adherence Trend
     </div>
     <div class="card-body">
         {% if adherence_data %}
-            <div class="table-responsive">
-                <table class="table table-borderless table-sm text-center">
-                    <tbody>
-                        <tr>
-                        {% for entry in adherence_data|reverse %}
-                            <td style="vertical-align: bottom;">
-                                <div class="progress" style="height: 200px; width: 50px; margin: auto;" role="progressbar">
-                                    <div class="progress-bar" style="height: {{ entry.percentage }}%;">
-                                        <span class="visually-hidden">{{ entry.percentage }}%</span>
-                                    </div>
-                                </div>
-                            </td>
-                        {% endfor %}
-                        </tr>
-                        <tr class="table-group-divider">
-                        {% for entry in adherence_data|reverse %}
-                            <th scope="col" class="fw-normal">
-                                <small>{{ entry.date.split('-')[2] }}/{{ entry.date.split('-')[1] }}</small>
-                            </th>
-                        {% endfor %}
-                        </tr>
-                        <tr>
-                        {% for entry in adherence_data|reverse %}
-                            <th scope="col">{{ entry.percentage }}%</th>
-                        {% endfor %}
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="chart-container">
+                <canvas id="adherenceChart"></canvas>
             </div>
         {% else %}
-            <p class="text-muted text-center">Not enough data to display adherence stats. Start logging your medicine intake!</p>
+            <div class="text-center py-5">
+                <i class="bi bi-bar-chart text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-3 fs-5">Not enough data to display adherence stats. Start logging your medicine intake!</p>
+            </div>
         {% endif %}
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-warning">
+<div class="row g-4">
+    <div class="col-md-6 fade-in-up delay-2">
+        <div class="card glass-card h-100">
+            <div class="glass-header bg-gradient-warning border-0">
                 <i class="bi bi-skip-forward-circle me-2"></i>Missed Doses Today
             </div>
-            <ul class="list-group list-group-flush">
+            <ul class="list-group list-group-flush pt-2 pb-2">
                 {% for dose in missed_doses %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        {{ dose.name }} 
-                        <span class="badge bg-secondary">{{ dose.time | time_indian }}</span>
+                    <li class="list-group-item d-flex justify-content-between align-items-center border-0 animated-list-item">
+                        <span class="fw-bold">{{ dose.name }}</span>
+                        <span class="badge bg-danger rounded-pill shadow-sm px-3 py-2">{{ dose.time | time_indian }}</span>
                     </li>
                 {% else %}
-                    <li class="list-group-item text-muted">No missed doses today. Great job!</li>
-                {% endfor %} {# <-- FIX #1: Was {% endif %} #}
+                    <li class="list-group-item text-center text-muted border-0 py-4">
+                        <i class="bi bi-emoji-smile fs-1 text-success d-block mb-2"></i>
+                        No missed doses today. Excellent work!
+                    </li>
+                {% endfor %}
             </ul>
         </div>
     </div>
-    <div class="col-md-6 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-success text-white">
+    <div class="col-md-6 fade-in-up delay-3">
+        <div class="card glass-card h-100">
+            <div class="glass-header bg-gradient-success border-0">
                 <i class="bi bi-stopwatch me-2"></i>Today's Intake Log
             </div>
-            <ul class="list-group list-group-flush">
+            <ul class="list-group list-group-flush pt-2 pb-2">
                 {% for log in intake_log %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        {{ log.name }}
-                        <span class="badge bg-secondary">{{ log.taken_at | datetime_indian }}</span>
+                    <li class="list-group-item d-flex justify-content-between align-items-center border-0 animated-list-item">
+                        <span class="fw-bold">{{ log.name }}</span>
+                        <span class="badge bg-light text-dark border rounded-pill shadow-sm px-3 py-2">
+                            <i class="bi bi-clock me-1"></i>{{ log.taken_at | datetime_indian }}
+                        </span>
                     </li>
                 {% else %}
-                    <li class="list-group-item text-muted">No medicines logged as taken yet today.</li>
+                    <li class="list-group-item text-center text-muted border-0 py-4">
+                        <i class="bi bi-inbox fs-1 text-secondary d-block mb-2"></i>
+                        No medicines logged as taken yet today.
+                    </li>
                 {% endfor %}
             </ul>
         </div>
     </div>
 </div>
+
+{% if adherence_data %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Extract data from Jinja (reversing so oldest is left, newest is right)
+    const rawData = [
+        {% for entry in adherence_data|reverse %}
+            { date: '{{ entry.date }}', percentage: {{ entry.percentage }} },
+        {% endfor %}
+    ];
+
+    const labels = rawData.map(d => {
+        // Format YYYY-MM-DD to DD/MM
+        const parts = d.date.split('-');
+        return `${parts[2]}/${parts[1]}`;
+    });
+    const dataPoints = rawData.map(d => d.percentage);
+
+    const ctx = document.getElementById('adherenceChart').getContext('2d');
+    
+    // Create gradient fill for the area chart
+    let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(13, 148, 136, 0.5)'); // Teal
+    gradient.addColorStop(1, 'rgba(13, 148, 136, 0.0)'); 
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Adherence Score (%)',
+                data: dataPoints,
+                borderColor: '#0d9488',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#0d9488',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                fill: true,
+                tension: 0.4 // Smooth bezier curves
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                    titleFont: { size: 14, family: "'Inter', sans-serif" },
+                    bodyFont: { size: 14, family: "'Inter', sans-serif" },
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.parsed.y}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 105, // Slightly above 100 for padding
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        stepSize: 20,
+                        font: { family: "'Inter', sans-serif" }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: { family: "'Inter', sans-serif" }
+                    }
+                }
+            },
+            animation: {
+                y: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+
 {% endblock %}
