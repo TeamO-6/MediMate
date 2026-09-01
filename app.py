@@ -67,6 +67,7 @@ def get_db():
         db_path = os.path.join(app.root_path, app.config['DATABASE'])
         g.db = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
         g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
 
 @app.teardown_appcontext
@@ -139,7 +140,7 @@ def inject_global_data():
     taken_today_ids = set()
     if active_profile_id:
         all_reminders_today = db.execute("SELECT m.id, m.name, r.time FROM reminders r JOIN medicines m ON r.medicine_id = m.id WHERE r.profile_id = ? AND r.days LIKE ?", (active_profile_id, f'%{today_name}%')).fetchall()
-        taken_today_rows = db.execute("SELECT DISTINCT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at) = DATE('now', 'localtime')", (active_profile_id,)).fetchall()
+        taken_today_rows = db.execute("SELECT DISTINCT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes')", (active_profile_id,)).fetchall()
         taken_today_ids = {row['medicine_id'] for row in taken_today_rows}
     
     return dict(
@@ -371,8 +372,8 @@ def stats():
     adherence_data = db.execute("SELECT date, percentage FROM adherence WHERE profile_id = ? ORDER BY date DESC LIMIT 7", (profile_id,)).fetchall()
     today_name = datetime.now().strftime('%a')
     current_time = datetime.now().strftime('%H:%M')
-    missed_doses = db.execute("SELECT m.name, r.time FROM reminders r JOIN medicines m ON r.medicine_id = m.id LEFT JOIN medicine_intake i ON r.medicine_id = i.medicine_id AND DATE(i.taken_at) = DATE('now', 'localtime') WHERE r.profile_id = ? AND r.days LIKE ? AND r.time < ? AND i.id IS NULL", (profile_id, f'%{today_name}%', current_time)).fetchall()
-    intake_log = db.execute("SELECT m.name, i.taken_at FROM medicine_intake i JOIN medicines m ON i.medicine_id = m.id WHERE i.profile_id = ? AND DATE(i.taken_at) = DATE('now', 'localtime') ORDER BY i.taken_at", (profile_id,)).fetchall()
+    missed_doses = db.execute("SELECT m.name, r.time FROM reminders r JOIN medicines m ON r.medicine_id = m.id LEFT JOIN medicine_intake i ON r.medicine_id = i.medicine_id AND DATE(i.taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes') WHERE r.profile_id = ? AND r.days LIKE ? AND r.time < ? AND i.id IS NULL", (profile_id, f'%{today_name}%', current_time)).fetchall()
+    intake_log = db.execute("SELECT m.name, i.taken_at FROM medicine_intake i JOIN medicines m ON i.medicine_id = m.id WHERE i.profile_id = ? AND DATE(i.taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes') ORDER BY i.taken_at", (profile_id,)).fetchall()
     return render_template('stats.html', adherence_data=adherence_data, missed_doses=missed_doses, intake_log=intake_log)
 
 @app.route('/emergency', methods=['GET', 'POST'])
@@ -573,7 +574,7 @@ def dashboard():
         SELECT r.time, m.name, m.id as medicine_id FROM reminders r
         JOIN medicines m ON r.medicine_id = m.id
         WHERE r.profile_id = ? AND r.days LIKE ?
-        AND m.id NOT IN (SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at) = DATE('now', 'localtime'))
+        AND m.id NOT IN (SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes'))
     """, (profile_id, f'%{today_name}%', profile_id)).fetchall()
 
     for rem in all_today_reminders:
@@ -581,20 +582,20 @@ def dashboard():
         reminder_time = datetime.strptime(rem['time'], '%H:%M').time()
         reminder_datetime_ist = datetime.combine(current_time_ist.date(), reminder_time).replace(tzinfo=ist_tz)
         
-        time_diff = abs(current_time_ist - reminder_datetime_ist)
-        if time_diff <= timedelta(minutes=15):
+        # Check if the reminder is past due OR coming up in the next 15 minutes
+        if reminder_datetime_ist <= current_time_ist + timedelta(minutes=15):
             due_now_reminders.append(rem)
 
     upcoming_reminders = db.execute("""
         SELECT r.time, m.name, m.id as medicine_id FROM reminders r
         JOIN medicines m ON r.medicine_id = m.id
         WHERE r.profile_id = ? AND r.time > ? AND r.days LIKE ?
-        AND m.id NOT IN (SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at) = DATE('now', 'localtime'))
+        AND m.id NOT IN (SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes'))
         ORDER BY r.time ASC LIMIT 5
     """, (profile_id, current_time_ist.strftime('%H:%M'), f'%{today_name}%', profile_id)).fetchall()
     
     low_stock_count = db.execute('SELECT COUNT(id) FROM medicines WHERE profile_id = ? AND current_stock <= 5', (profile_id,)).fetchone()[0]
-    meds_taken_today = db.execute("SELECT COUNT(id) FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at) = DATE('now', 'localtime')", (profile_id,)).fetchone()[0]
+    meds_taken_today = db.execute("SELECT COUNT(id) FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes')", (profile_id,)).fetchone()[0]
     health_records_count = db.execute("SELECT COUNT(id) FROM medical_history WHERE profile_id = ?", (profile_id,)).fetchone()[0]
     emergency_contacts_count = db.execute("SELECT COUNT(id) FROM emergency_contacts WHERE profile_id = ?", (profile_id,)).fetchone()[0]
     activities = db.execute("""
@@ -898,7 +899,7 @@ def intake_log():
     today_name = current_time_ist.strftime('%a')
     
     taken_today_ids = [m['medicine_id'] for m in db.execute(
-        "SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at) = DATE('now', 'localtime')", 
+        "SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes')", 
         (profile_id,)
     ).fetchall()]
     
