@@ -19,8 +19,6 @@ from forms import (RegistrationForm, LoginForm, ProfileForm, ChangePasswordForm,
 # =========================================
 app = Flask(__name__)
 
-from datetime import datetime, timedelta, timezone
-
 def format_datetime_indian(value, format_str='%d-%m-%Y %I:%M %p'):
     """Endpoint/Function to Handle Format datetime indian."""
     if value is None:
@@ -55,7 +53,7 @@ def format_time_indian(value, format_str='%I:%M %p'):
 app.jinja_env.filters['time_indian'] = format_time_indian
 
 app.jinja_env.filters['datetime_indian'] = format_datetime_indian
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback_dev_key')
 app.config['DATABASE'] = 'healthcare.db'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx'}
@@ -734,7 +732,7 @@ def generate_qr():
     if not profile_id: return redirect(url_for('profiles'))
     db = get_db()
     token = secrets.token_urlsafe(16)
-    expires_at = datetime.now() + timedelta(minutes=15)
+    expires_at = (datetime.now() + timedelta(minutes=15)).strftime('%Y-%m-%d %H:%M:%S')
     db.execute("INSERT INTO share_tokens (profile_id, token, expires_at) VALUES (?, ?, ?)",
                (profile_id, token, expires_at))
     db.commit()
@@ -750,7 +748,8 @@ def generate_qr():
 def share_page(token):
     """Endpoint/Function to Handle Share page."""
     db = get_db()
-    token_data = db.execute("SELECT * FROM share_tokens WHERE token = ? AND expires_at > ?", (token, datetime.now())).fetchone()
+    current_time_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    token_data = db.execute("SELECT * FROM share_tokens WHERE token = ? AND expires_at > ?", (token, current_time_str)).fetchone()
     if not token_data:
         return "<h2>Invalid or Expired Link</h2>", 404
     
