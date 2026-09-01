@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, SelectField, DateField, TimeField, FileField, SelectMultipleField
-from wtforms.validators import DataRequired, EqualTo, Length, NumberRange, Optional, InputRequired
+from wtforms.validators import DataRequired, EqualTo, Length, NumberRange, Optional, InputRequired, Regexp
 from wtforms.widgets import ListWidget, CheckboxInput
 
 class MultiCheckboxField(SelectMultipleField):
@@ -80,5 +80,8 @@ class EmergencyContactForm(FlaskForm):
     """Model representing EmergencyContactForm."""
     name = StringField('Contact Name', validators=[DataRequired()])
     relationship = StringField('Relationship', validators=[Optional()])
-    phone = StringField('Phone Number', validators=[DataRequired()])
+    phone = StringField('Phone Number', validators=[
+        DataRequired(),
+        Regexp(r'^\d{10}$', message="Phone number must be exactly 10 digits for Indian format.")
+    ])
     submit = SubmitField('Save Contact')

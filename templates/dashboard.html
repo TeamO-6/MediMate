@@ -151,4 +151,28 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Check if there are due reminders by checking for the banner class
+        var hasDueReminders = document.querySelector('.action-required-banner') !== null;
+        
+        if (hasDueReminders) {
+            if (Notification.permission === "granted") {
+                new Notification("MediMate Alert", {
+                    body: "You have medications that are due right now! Please mark them as taken.",
+                    icon: "/static/favicon.ico" // Optional icon
+                });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(function (permission) {
+                    if (permission === "granted") {
+                        new Notification("MediMate Alert", {
+                            body: "You have medications that are due right now! Please mark them as taken.",
+                        });
+                    }
+                });
+            }
+        }
+    });
+</script>
 {% endblock %}
