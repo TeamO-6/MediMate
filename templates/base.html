@@ -7,73 +7,137 @@
     <title>MediMate</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-custom shadow-sm sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}"><i class="bi bi-hospital"></i> MEDIMATE</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
-                    {% if current_user.is_authenticated %}
-                        {% if active_profile %}
-                        <li class="nav-item dropdown me-2">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-person-circle me-1"></i> Viewing: <strong>{{ active_profile.profile_name }}</strong>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                {% for profile in profiles %}
-                                    <li><a class="dropdown-item {% if profile.id == active_profile.id %}active{% endif %}" href="{{ url_for('switch_profile', profile_id=profile.id) }}">{{ profile.profile_name }}</a></li>
-                                {% endfor %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('manager_dashboard') }}"><i class="bi bi-grid-fill me-2"></i>Family Overview</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('profiles') }}"><i class="bi bi-gear-fill me-2"></i>Manage Profiles</a></li>
-                            </ul>
-                        </li>
-                        {% endif %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('stats') }}">Stats</a></li>
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-outline-secondary me-2" href="{{ url_for('my_account') }}">
-                                <i class="bi bi-person-fill me-1"></i> My Account
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-primary" href="{{ url_for('logout') }}">
-                                <i class="bi bi-box-arrow-right me-1"></i> Logout
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Register</a></li>
-                    {% endif %}
-                </ul>
+<body>
+    {% if current_user.is_authenticated %}
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="bi bi-hospital" style="color: var(--teal); font-size: 1.6rem;"></i>
+                MediMate
             </div>
-        </div>
-    </nav>
 
+            {% if active_profile %}
+            <div class="sidebar-profile dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="profile-avatar">
+                    {{ active_profile.profile_name[0]|upper }}
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name">{{ active_profile.profile_name }}</div>
+                    <div class="profile-role">Account Manager</div>
+                </div>
+                <i class="bi bi-chevron-down text-secondary" style="font-size: 0.75rem;"></i>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-dark w-100 mx-3 shadow">
+                <li class="px-3 py-1">
+                    <small class="text-uppercase fw-bold text-muted" style="letter-spacing: 0.05em;">Switch Profile</small>
+                </li>
+                {% for profile in profiles %}
+                    <li><a class="dropdown-item {% if profile.id == active_profile.id %}active{% endif %}" href="{{ url_for('switch_profile', profile_id=profile.id) }}">{{ profile.profile_name }}</a></li>
+                {% endfor %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('manager_dashboard') }}"><i class="bi bi-grid-fill me-2"></i>Family Overview</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('profiles') }}"><i class="bi bi-gear-fill me-2"></i>Manage Profiles</a></li>
+            </ul>
+            {% endif %}
+
+            <div class="sidebar-section">Navigation</div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('dashboard') }}" class="sidebar-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-layout-sidebar-inset"></i>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('medicines') }}" class="sidebar-link {% if request.endpoint == 'medicines' %}active{% endif %}">
+                    <i class="bi bi-capsule"></i>
+                    Medicines
+                </a>
+                <a href="{{ url_for('reminders') }}" class="sidebar-link {% if request.endpoint == 'reminders' %}active{% endif %}">
+                    <i class="bi bi-alarm"></i>
+                    Reminders
+                </a>
+                <a href="{{ url_for('appointments') }}" class="sidebar-link {% if request.endpoint == 'appointments' %}active{% endif %}">
+                    <i class="bi bi-calendar2-check"></i>
+                    Appointments
+                </a>
+                <a href="{{ url_for('intake_log') }}" class="sidebar-link {% if request.endpoint == 'intake_log' %}active{% endif %}">
+                    <i class="bi bi-list-check"></i>
+                    Intake Log
+                </a>
+            </nav>
+
+            <div class="sidebar-section mt-4">Records</div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('history') }}" class="sidebar-link {% if request.endpoint == 'history' %}active{% endif %}">
+                    <i class="bi bi-file-medical"></i>
+                    Medical History
+                </a>
+                <a href="{{ url_for('emergency') }}" class="sidebar-link {% if request.endpoint == 'emergency' %}active{% endif %}">
+                    <i class="bi bi-telephone-plus"></i>
+                    Emergency Contacts
+                </a>
+                <a href="{{ url_for('stats') }}" class="sidebar-link {% if request.endpoint == 'stats' %}active{% endif %}">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    Health Stats
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                {% if active_profile %}
+                <div class="d-flex align-items-center gap-2 mb-3 px-3">
+                    <div class="profile-avatar" style="width: 24px; height: 24px; font-size: 0.6rem;">
+                        {{ active_profile.profile_name[0]|upper }}
+                    </div>
+                    <div class="d-flex flex-column" style="line-height:1.1">
+                        <span class="text-white" style="font-size:0.75rem;font-weight:600;">{{ active_profile.profile_name }}</span>
+                        <span class="text-muted" style="font-size:0.65rem;">ak</span>
+                    </div>
+                </div>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" class="sign-out-link">
+                    <i class="bi bi-box-arrow-right"></i>
+                    Sign out
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+    {% else %}
+    <!-- Simplified Layout for Logged Out Users -->
     <main class="container py-4">
+    {% endif %}
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                        <i class="bi bi-{% if category == 'success' %}check-circle-fill{% elif category == 'danger' %}exclamation-triangle-fill{% else %}info-circle-fill{% endif %} me-2"></i>
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
+        
         {% block content %}{% endblock %}
+
+    {% if current_user.is_authenticated %}
+        </main>
+    </div>
+    {% else %}
     </main>
-    
+    {% endif %}
+
     {% if current_user.is_authenticated and daily_reminders %}
     <div id="reminder-data" style="display: none;">{{ daily_reminders | tojson | safe }}</div>
     <div id="taken-today-data" style="display: none;">{{ taken_today_ids | tojson | safe }}</div>
     {% endif %}
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -92,9 +156,6 @@
             const notifiedTimes = new Set();
             let lastCheckedTime = new Date();
             
-            // --- DEBUG --- Log initial data
-            console.log('Reminder script loaded. Total reminders for today:', reminders.length);
-
             function checkReminders() {
                 const now = new Date();
                 
@@ -117,26 +178,14 @@
                     reminderTimeUTC.setUTCHours(hourUTC, minuteUTC, 0, 0);
 
                     const uniqueId = reminder.name + reminder.time;
-                    if (!notifiedTimes.has(uniqueId)) {
-                        // --- DEBUG --- Log the comparison for each reminder
-                        console.log(
-                            `Checking: ${reminder.name} at ${reminder.time} IST.`,
-                            `Current Time (UTC): ${now.toISOString()}`,
-                            `Reminder Time (UTC): ${reminderTimeUTC.toISOString()}`,
-                            `Should fire? ${reminderTimeUTC > lastCheckedTime && reminderTimeUTC <= now}`
-                        );
-                    }
                     
                     if (reminderTimeUTC > lastCheckedTime && reminderTimeUTC <= now) {
                         if (!takenTodaySet.has(reminder.id) && !notifiedTimes.has(uniqueId)) {
-                            // --- DEBUG --- Log when a notification is being sent
-                            console.warn(`NOTIFICATION FIRING for ${reminder.name}`);
                             showNotification(reminder.name, reminder.time);
                             notifiedTimes.add(uniqueId);
                         }
                     }
                 });
-
                 lastCheckedTime = now;
             }
 
@@ -154,6 +203,6 @@
             console.error("Error in reminder script:", e);
         }
     });
-</script>
+    </script>
 </body>
 </html>
