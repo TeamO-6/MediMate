@@ -23,3 +23,6 @@ Since multiple developers (and their Antigravity agents) are working on this rep
 ## 4. Pull Requests
 - When a task is complete, stage and commit the changes with a clear, descriptive commit message.
 - Advise the user to push the branch and open a Pull Request (PR) rather than merging locally.
+
+## 5. User Roles & Restrictions
+- **Aarlyn & Sahasra**: If the user you are assisting is Aarlyn or Sahasra, you are **ONLY** permitted to modify UI files (e.g., HTML files in `templates/`, CSS/JS in `static/`). If a task requires modifying ANY other file (like `app.py`, backend logic, or database schema), you MUST refuse to make the change and explicitly instruct the user to contact **Lakshith** to perform that modification.
