@@ -2,28 +2,34 @@
 {% from "_formhelpers.html" import render_field %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="auth-card card fade-in-up">
+            <div class="auth-header">
+                <i class="bi bi-person-plus-fill"></i>
+                <h2>Create Account</h2>
+                <p class="mb-0" style="font-size:0.875rem;opacity:0.85;">Join MediMate — it's free and secure</p>
+            </div>
             <div class="card-body">
-                <h2 class="card-title text-center mb-4">Create an Account</h2>
                 <form method="POST" action="">
                     {{ form.hidden_tag() }}
-                    {{ render_field(form.full_name) }}
-                    {{ render_field(form.email) }}
-                    {{ render_field(form.password) }}
-                    {{ render_field(form.confirm_password) }}
-                    {{ render_field(form.date_of_birth) }}
-                    {{ render_field(form.gender) }}
-                    <div class="d-grid mt-4">
+                    <div class="mb-3">{{ render_field(form.full_name) }}</div>
+                    <div class="mb-3">{{ render_field(form.email) }}</div>
+                    <div class="row">
+                        <div class="col-6 mb-3">{{ render_field(form.password) }}</div>
+                        <div class="col-6 mb-3">{{ render_field(form.confirm_password) }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">{{ render_field(form.date_of_birth) }}</div>
+                        <div class="col-6 mb-3">{{ render_field(form.gender) }}</div>
+                    </div>
+                    <div class="d-grid mt-2">
                         {{ form.submit(class="btn btn-primary btn-lg") }}
                     </div>
                 </form>
             </div>
-            <div class="card-footer text-center">
-                <small class="text-muted">
-                    Already have an account? <a href="{{ url_for('login') }}">Log In</a>
-                </small>
+            <div class="card-footer">
+                Already have an account? <a href="{{ url_for('login') }}" style="color:var(--primary);font-weight:600;">Log In</a>
             </div>
         </div>
     </div>

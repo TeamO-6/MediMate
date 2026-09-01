@@ -1,51 +1,70 @@
 {% extends "base.html" %}
+{% from "_formhelpers.html" import render_field %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="display-6"><i class="bi bi-capsule-pill"></i> Manage Medicines</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('add_medicine') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Add New Medicine
-        </a>
+
+<div class="page-header fade-in-up">
+    <h1><i class="bi bi-capsule-pill"></i> Manage Medicines</h1>
+    <a href="{{ url_for('add_medicine') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle-fill me-1"></i> Add New Medicine
+    </a>
+</div>
+
+<div class="card fade-in-up delay-1">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Name</th>
+                    <th>Stock</th>
+                    <th>Timing</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for med in medicines %}
+                <tr>
+                    <td class="ps-4 fw-600" style="font-size:0.9rem;">{{ med.name }}</td>
+                    <td>
+                        {% if med.current_stock <= 5 %}
+                            <span class="badge bg-danger">{{ med.current_stock }} left</span>
+                        {% elif med.current_stock <= 15 %}
+                            <span class="badge bg-warning">{{ med.current_stock }} left</span>
+                        {% else %}
+                            <span class="badge bg-success">{{ med.current_stock }} left</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.875rem;color:var(--slate-mid);">{{ med.meal_timing }} {{ med.meal_type }}</td>
+                    <td class="text-end pe-4">
+                        <div class="d-flex align-items-center gap-2 justify-content-end">
+                            <form action="{{ url_for('add_stock', med_id=med.id) }}" method="POST" class="d-flex align-items-center gap-1">
+                                <input type="number" name="quantity" class="form-control form-control-sm" style="width:64px;" min="1" value="10">
+                                <button type="submit" class="btn btn-sm" style="background:var(--primary-light);color:var(--primary);font-weight:600;border:1px solid #bfdbfe;" title="Add Stock">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </form>
+                            <form action="{{ url_for('delete_medicine', med_id=med.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-5" style="color:var(--slate-light);">
+                        <i class="bi bi-capsule-pill" style="font-size:3rem;display:block;margin-bottom:1rem;"></i>
+                        <p class="mb-2" style="font-size:0.9rem;font-weight:500;">No medicines found.</p>
+                        <a href="{{ url_for('add_medicine') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle-fill me-1"></i>Add First Medicine
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>Name</th>
-                <th>Stock</th>
-                <th>Timing</th>
-                <th style="width: 250px;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for med in medicines %}
-            <tr>
-                <td class="align-middle">{{ med.name }}</td>
-                <td class="align-middle">
-                    {% if med.current_stock <= 5 %}
-                        <span class="badge bg-danger fs-6">{{ med.current_stock }}</span>
-                    {% else %}
-                        <span class="badge bg-success fs-6">{{ med.current_stock }}</span>
-                    {% endif %}
-                </td>
-                <td class="align-middle">{{ med.meal_timing }} {{ med.meal_type }}</td>
-                <td>
-                    <form action="{{ url_for('add_stock', med_id=med.id) }}" method="POST" class="d-inline">
-                        <input type="number" name="quantity" class="form-control-sm" style="width: 60px;" min="1" value="10">
-                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Add Stock">+</button>
-                    </form>
-                    <form action="{{ url_for('delete_medicine', med_id=med.id) }}" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" class="text-center p-4"><h5>No medicines found.</h5><p>Why not add your first one?</p><a href="{{ url_for('add_medicine') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add New Medicine</a></td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 {% endblock %}
