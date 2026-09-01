@@ -886,13 +886,48 @@ def intake_log():
 
     db = get_db()
     
-    log_entries = db.execute("""
+    taken_medicines = db.execute("""
         SELECT i.id, m.name, i.taken_at 
         FROM medicine_intake i JOIN medicines m ON i.medicine_id = m.id 
         WHERE i.profile_id = ? 
         ORDER BY i.taken_at DESC
     """, (profile_id,)).fetchall()
-    return render_template('intake_log.html', log_entries=log_entries)
+    
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+    current_time_ist = datetime.now(ist_tz)
+    today_name = current_time_ist.strftime('%a')
+    
+    taken_today_ids = [m['medicine_id'] for m in db.execute(
+        "SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at) = DATE('now', 'localtime')", 
+        (profile_id,)
+    ).fetchall()]
+    
+    today_reminders = db.execute("""
+        SELECT r.id, m.name, m.id as medicine_id, r.time 
+        FROM reminders r JOIN medicines m ON r.medicine_id = m.id 
+        WHERE r.profile_id = ? AND r.days LIKE ?
+        ORDER BY r.time ASC
+    """, (profile_id, f'%{today_name}%')).fetchall()
+    
+    to_take_now = []
+    to_take_later = []
+    
+    for rem in today_reminders:
+        if rem['medicine_id'] in taken_today_ids:
+            continue
+            
+        reminder_time = datetime.strptime(rem['time'], '%H:%M').time()
+        reminder_datetime_ist = datetime.combine(current_time_ist.date(), reminder_time).replace(tzinfo=ist_tz)
+        
+        if reminder_datetime_ist <= current_time_ist + timedelta(minutes=30):
+            to_take_now.append(rem)
+        else:
+            to_take_later.append(rem)
+
+    return render_template('intake_log.html', 
+                           taken_medicines=taken_medicines, 
+                           to_take_now=to_take_now, 
+                           to_take_later=to_take_later)
 
 @app.route('/intake/delete/<int:log_id>', methods=['POST'])
 @login_required
