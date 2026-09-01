@@ -1,0 +1,110 @@
+import sqlite3
+import os
+from werkzeug.security import generate_password_hash
+from datetime import datetime, timedelta
+
+def seed_demo_data():
+    db_path = 'c:/Users/laksh/OneDrive - Shiv Nadar University - Chennai/Others/Hackathons/SIH/FamilyHealthManager-main/healthcare.db'
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    # 1. Create Demo User
+    email = 'demo@example.com'
+    # Check if user already exists
+    cur.execute("SELECT id FROM users WHERE email = ?", (email,))
+    existing_user = cur.fetchone()
+    if existing_user:
+        print("Demo user already exists.")
+        return
+
+    password_hash = generate_password_hash('demo123')
+    cur.execute("INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)", 
+                ("Demo User", email, password_hash))
+    user_id = cur.lastrowid
+
+    # 2. Create Profiles
+    # Manager Profile (Self)
+    cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)",
+                (user_id, "Demo User", "1980-05-15", "Male", 1))
+    profile_id_self = cur.lastrowid
+
+    # Dependent Profile (Parent)
+    cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)",
+                (user_id, "Demo Parent", "1950-10-22", "Female", 0))
+    profile_id_parent = cur.lastrowid
+
+    # 3. Add Medicines & Reminders for Self
+    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (profile_id_self, "Vitamin D3", 30, "After Meal", "Breakfast", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Supplement"))
+    med_self_1 = cur.lastrowid
+    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
+                (profile_id_self, med_self_1, "09:00", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Take with milk"))
+
+    now_ist = datetime.now()
+    
+    # Medicine 2 (To Take Now)
+    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (profile_id_self, "Omega-3 Fish Oil", 60, "With Meal", "Lunch", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Heart Health"))
+    med_self_2 = cur.lastrowid
+    past_due_time = (now_ist - timedelta(minutes=15)).strftime('%H:%M')
+    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
+                (profile_id_self, med_self_2, past_due_time, "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Swallow whole"))
+
+    # Medicine 3 (To Take Later)
+    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (profile_id_self, "Melatonin", 15, "Before Sleep", "Dinner", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Sleep Aid"))
+    med_self_3 = cur.lastrowid
+    later_time = (now_ist + timedelta(hours=2)).strftime('%H:%M')
+    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
+                (profile_id_self, med_self_3, later_time, "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "30 mins before bed"))
+
+    # Add Intake Log for Vitamin D3 (Already Taken Today)
+    taken_time = now_ist.replace(hour=9, minute=5, second=0).strftime('%Y-%m-%d %H:%M:%S')
+    cur.execute("INSERT INTO medicine_intake (profile_id, medicine_id, taken_at) VALUES (?, ?, ?)",
+                (profile_id_self, med_self_1, taken_time))
+
+    # 4. Add Medicines & Reminders for Parent
+    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (profile_id_parent, "Lisinopril", 15, "Before Meal", "Breakfast", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Blood Pressure"))
+    med_parent_1 = cur.lastrowid
+    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
+                (profile_id_parent, med_parent_1, "08:00", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Important"))
+
+    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (profile_id_parent, "Metformin", 50, "After Meal", "Dinner", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Diabetes"))
+    med_parent_2 = cur.lastrowid
+    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
+                (profile_id_parent, med_parent_2, "20:00", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Take with water"))
+
+    # 5. Add Medical History
+    cur.execute("INSERT INTO medical_history (profile_id, condition, description) VALUES (?, ?, ?)",
+                (profile_id_parent, "Hypertension", "Diagnosed in 2015. Controlled with Lisinopril."))
+    cur.execute("INSERT INTO medical_history (profile_id, condition, description) VALUES (?, ?, ?)",
+                (profile_id_parent, "Type 2 Diabetes", "Diagnosed in 2018. Monitored regularly."))
+
+    # 6. Add Emergency Contacts
+    cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",
+                (profile_id_parent, "Dr. Smith", "Primary Care Physician", "555-0198"))
+    cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",
+                (profile_id_self, "Jane Doe", "Spouse", "555-0123"))
+
+    # 7. Add Some Fake Adherence/Intake Data (to make charts look good)
+    today = datetime.now()
+    for i in range(7):
+        past_date = today - timedelta(days=i)
+        date_str = past_date.strftime('%Y-%m-%d')
+        # Parent Adherence (around 80-100%)
+        percent = 100 if i % 3 != 0 else 50
+        cur.execute("INSERT INTO adherence (profile_id, date, percentage) VALUES (?, ?, ?)",
+                    (profile_id_parent, date_str, percent))
+        
+        # Self Adherence (100%)
+        cur.execute("INSERT INTO adherence (profile_id, date, percentage) VALUES (?, ?, ?)",
+                    (profile_id_self, date_str, 100))
+
+    conn.commit()
+    conn.close()
+    print("Successfully seeded demo user data.")
+
+if __name__ == '__main__':
+    seed_demo_data()
