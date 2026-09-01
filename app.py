@@ -219,14 +219,11 @@ def calculate_and_save_adherence(profile_id):
             unmatched_intakes.append({'med_id': row['medicine_id'], 'time': aware_time})
 
     doses_taken_on_time = 0
-    window = timedelta(minutes=15)
     for rem in due_reminders_rows:
         rem_med_id = rem['medicine_id']
-        rem_time_obj = datetime.strptime(rem['time'], '%H:%M').time()
-        rem_datetime = now_ist.replace(hour=rem_time_obj.hour, minute=rem_time_obj.minute, second=0, microsecond=0)
         
         for i, intake in enumerate(unmatched_intakes):
-            if intake['med_id'] == rem_med_id and abs(intake['time'] - rem_datetime) <= window:
+            if intake['med_id'] == rem_med_id:
                 doses_taken_on_time += 1
                 unmatched_intakes.pop(i)
                 break 
