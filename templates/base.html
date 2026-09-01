@@ -88,15 +88,15 @@
 
             <div class="sidebar-footer">
                 {% if active_profile %}
-                <div class="d-flex align-items-center gap-2 mb-3 px-3">
+                <a href="{{ url_for('my_account') }}" class="d-flex align-items-center gap-2 mb-3 px-3 text-decoration-none" style="transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                     <div class="profile-avatar" style="width: 24px; height: 24px; font-size: 0.6rem;">
                         {{ active_profile.profile_name[0]|upper }}
                     </div>
                     <div class="d-flex flex-column" style="line-height:1.1">
                         <span class="text-white" style="font-size:0.75rem;font-weight:600;">{{ active_profile.profile_name }}</span>
-                        <span class="text-muted" style="font-size:0.65rem;">ak</span>
+                        <span class="text-muted" style="font-size:0.65rem;">{{ current_user.full_name }}</span>
                     </div>
-                </div>
+                </a>
                 {% endif %}
                 <a href="{{ url_for('logout') }}" class="sign-out-link">
                     <i class="bi bi-box-arrow-right"></i>
