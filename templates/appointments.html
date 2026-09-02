@@ -19,7 +19,10 @@
                     {{ form.hidden_tag() }}
                     <div class="mb-3">{{ render_field(form.doctor_name) }}</div>
                     <div class="mb-3">{{ render_field(form.hospital) }}</div>
-                    <div class="mb-3">{{ render_field(form.date_time) }}</div>
+                    <div class="row mb-3">
+                        <div class="col-6">{{ render_field(form.date) }}</div>
+                        <div class="col-6">{{ render_field(form.time) }}</div>
+                    </div>
                     <div class="mb-3">{{ render_field(form.purpose) }}</div>
                     <div class="mb-4">{{ render_field(form.reminder_minutes_before) }}</div>
                     {{ form.submit(class="btn btn-primary w-100") }}

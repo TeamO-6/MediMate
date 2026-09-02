@@ -69,7 +69,8 @@ class AppointmentForm(FlaskForm):
     """Model representing AppointmentForm."""
     doctor_name = StringField('Doctor Name', validators=[DataRequired()])
     hospital = StringField('Hospital/Clinic', validators=[Optional()])
-    date_time = StringField('Date and Time', validators=[DataRequired()], render_kw={"placeholder": "DD-MM-YYYY HH:MM (24-hr format)"})
+    date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
+    time = TimeField('Time', format='%H:%M', validators=[DataRequired()])
     purpose = StringField('Purpose', validators=[DataRequired()])
     reminder_minutes_before = SelectField('Remind Me Before', coerce=int, choices=[
         (0, 'No Reminder'), (15, '15 Minutes'), (30, '30 Minutes'), (60, '1 Hour'), (1440, '1 Day')

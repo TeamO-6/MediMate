@@ -352,13 +352,13 @@ def appointments():
     db = get_db()
     if form.validate_on_submit():
         try:
-            dt_obj = datetime.strptime(form.date_time.data, '%d-%m-%Y %H:%M')
+            dt_obj = datetime.combine(form.date.data, form.time.data)
             db.execute('INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)', (profile_id, form.doctor_name.data, form.hospital.data, dt_obj, form.purpose.data, form.reminder_minutes_before.data))
             db.commit()
             flash('Appointment scheduled.', 'success')
             return redirect(url_for('appointments'))
-        except ValueError:
-            flash('Invalid date/time format. Please use DD-MM-YYYY HH:MM.', 'danger')
+        except Exception as e:
+            flash('Failed to schedule appointment. Please check your inputs.', 'danger')
     all_appointments = db.execute('SELECT * FROM appointments WHERE profile_id = ? ORDER BY date_time DESC', (profile_id,)).fetchall()
     return render_template('appointments.html', form=form, appointments=all_appointments)
 
