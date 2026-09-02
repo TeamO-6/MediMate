@@ -767,7 +767,7 @@ def dashboard():
             due_now_reminders.append(rem)
 
     upcoming_reminders = db.execute("""
-        SELECT r.time, m.name, m.id as medicine_id FROM reminders r
+        SELECT r.time, r.note, m.name, m.id as medicine_id FROM reminders r
         JOIN medicines m ON r.medicine_id = m.id
         WHERE r.profile_id = ? AND r.time > ? AND r.days LIKE ?
         AND m.id NOT IN (SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes'))
