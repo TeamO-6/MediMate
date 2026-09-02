@@ -1239,7 +1239,17 @@ def manager_dashboard():
                            all_appointments=all_appointments,
                            low_stock_medicines=low_stock_medicines,
                            recent_activities=recent_activities)
-  
+
+@app.route('/seed_demo_account')
+def seed_demo_account():
+    """Temporary route to seed demo data since shell is not available on Render free tier."""
+    try:
+        from seed_demo import seed_demo_data
+        seed_demo_data()
+        flash("Demo account 'john@gmail.com' successfully seeded with all data!", "success")
+        return redirect(url_for('login'))
+    except Exception as e:
+        return f"Error seeding data: {e}", 500
+
 if __name__ == '__main__':
     app.run(debug=True)
-    
