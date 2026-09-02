@@ -986,3 +986,28 @@ a:hover { color: var(--primary-dark); }
     color: #fff;
 }
 .dropdown-divider { border-color: var(--border); margin: 0.375rem 0; }
+
+/* Sidebar Specific Dropdown Overrides */
+.sidebar .dropdown-menu {
+    background-color: var(--slate);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 0.5rem !important;
+}
+.sidebar .dropdown-item {
+    color: var(--slate-light) !important;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    margin: 0 0.5rem;
+    width: auto;
+}
+.sidebar .dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+.sidebar .dropdown-item.active {
+    background-color: var(--teal) !important;
+    color: #fff !important;
+}
+.sidebar .dropdown-divider {
+    border-color: rgba(255, 255, 255, 0.1);
+}
