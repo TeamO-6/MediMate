@@ -885,12 +885,28 @@ def intake_log():
         flash("Please select a profile first.", "warning")
         return redirect(url_for('profiles'))
 
+    time_filter = request.args.get('filter', 'today')
     db = get_db()
     
-    taken_medicines = db.execute("""
+    date_condition = ""
+    if time_filter == 'today':
+        date_condition = "AND DATE(i.taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes')"
+        filter_label = "Today"
+    elif time_filter == '7days':
+        date_condition = "AND DATE(i.taken_at, '+5 hours', '+30 minutes') >= DATE('now', '-7 days', '+5 hours', '+30 minutes')"
+        filter_label = "Last 7 Days"
+    elif time_filter == '1month':
+        date_condition = "AND DATE(i.taken_at, '+5 hours', '+30 minutes') >= DATE('now', '-1 month', '+5 hours', '+30 minutes')"
+        filter_label = "Last 1 Month"
+    else:
+        date_condition = ""
+        filter_label = "All Time"
+        time_filter = 'all'
+    
+    taken_medicines = db.execute(f"""
         SELECT i.id, m.name, i.taken_at 
         FROM medicine_intake i JOIN medicines m ON i.medicine_id = m.id 
-        WHERE i.profile_id = ? 
+        WHERE i.profile_id = ? {date_condition}
         ORDER BY i.taken_at DESC
     """, (profile_id,)).fetchall()
     
@@ -928,7 +944,9 @@ def intake_log():
     return render_template('intake_log.html', 
                            taken_medicines=taken_medicines, 
                            to_take_now=to_take_now, 
-                           to_take_later=to_take_later)
+                           to_take_later=to_take_later,
+                           time_filter=time_filter,
+                           filter_label=filter_label)
 
 @app.route('/intake/delete/<int:log_id>', methods=['POST'])
 @login_required
