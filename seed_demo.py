@@ -1,7 +1,7 @@
 import sqlite3
 import os
 from werkzeug.security import generate_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 def seed_demo_data():
     db_path = 'c:/Users/laksh/OneDrive - Shiv Nadar University - Chennai/Others/Hackathons/SIH/FamilyHealthManager-main/healthcare.db'
@@ -9,28 +9,34 @@ def seed_demo_data():
     cur = conn.cursor()
 
     # 1. Create Demo User
-    email = 'demo@example.com'
+    email = 'john@gmail.com'
     # Check if user already exists
     cur.execute("SELECT id FROM users WHERE email = ?", (email,))
     existing_user = cur.fetchone()
     if existing_user:
-        print("Demo user already exists.")
-        return
+        print("Demo user already exists. Deleting to recreate...")
+        user_id = existing_user[0]
+        cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        # Foreign key constraints (if ON DELETE CASCADE is properly set up in DB) might handle this, but let's be safe:
+        # Actually SQLite doesn't enforce PRAGMA foreign_keys = ON by default in standard connect unless specified, 
+        # so let's delete manually or assume it's okay.
+        # Actually, let's just let it be and use a clean insert.
+        cur.execute("DELETE FROM profiles WHERE manager_user_id = ?", (user_id,))
 
-    password_hash = generate_password_hash('demo123')
+    password_hash = generate_password_hash('123456')
     cur.execute("INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)", 
-                ("Demo User", email, password_hash))
+                ("John Doe", email, password_hash))
     user_id = cur.lastrowid
 
     # 2. Create Profiles
     # Manager Profile (Self)
     cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)",
-                (user_id, "Demo User", "1980-05-15", "Male", 1))
+                (user_id, "John Doe", "1985-05-15", "Male", 1))
     profile_id_self = cur.lastrowid
 
     # Dependent Profile (Parent)
     cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)",
-                (user_id, "Demo Parent", "1950-10-22", "Female", 0))
+                (user_id, "Jane Doe (Mother)", "1955-10-22", "Female", 0))
     profile_id_parent = cur.lastrowid
 
     # 3. Add Medicines & Reminders for Self
@@ -46,7 +52,7 @@ def seed_demo_data():
     cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (profile_id_self, "Omega-3 Fish Oil", 60, "With Meal", "Lunch", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Heart Health"))
     med_self_2 = cur.lastrowid
-    past_due_time = (now_ist - timedelta(minutes=15)).strftime('%H:%M')
+    past_due_time = (now_ist - timedelta(minutes=10)).strftime('%H:%M')
     cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
                 (profile_id_self, med_self_2, past_due_time, "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Swallow whole"))
 
@@ -86,14 +92,14 @@ def seed_demo_data():
     cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",
                 (profile_id_parent, "Dr. Smith", "Primary Care Physician", "555-0198"))
     cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",
-                (profile_id_self, "Jane Doe", "Spouse", "555-0123"))
+                (profile_id_self, "Mary Doe", "Spouse", "555-0123"))
 
-    # 7. Add Some Fake Adherence/Intake Data (to make charts look good)
+    # 7. Add Some Fake Adherence/Intake Data
     today = datetime.now()
     for i in range(7):
         past_date = today - timedelta(days=i)
         date_str = past_date.strftime('%Y-%m-%d')
-        # Parent Adherence (around 80-100%)
+        # Parent Adherence
         percent = 100 if i % 3 != 0 else 50
         cur.execute("INSERT INTO adherence (profile_id, date, percentage) VALUES (?, ?, ?)",
                     (profile_id_parent, date_str, percent))
@@ -102,9 +108,20 @@ def seed_demo_data():
         cur.execute("INSERT INTO adherence (profile_id, date, percentage) VALUES (?, ?, ?)",
                     (profile_id_self, date_str, 100))
 
+    # 8. Add Appointments
+    # Appointment for self later today
+    appt_dt_1 = (now_ist + timedelta(hours=4)).replace(tzinfo=timezone(timedelta(hours=5, minutes=30))).astimezone(timezone.utc).replace(tzinfo=None)
+    cur.execute("INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)",
+                (profile_id_self, "Dr. John Watson", "St. Mary's Clinic", appt_dt_1, "General Checkup", 60))
+
+    # Appointment for parent tomorrow
+    appt_dt_2 = (now_ist + timedelta(days=1, hours=2)).replace(tzinfo=timezone(timedelta(hours=5, minutes=30))).astimezone(timezone.utc).replace(tzinfo=None)
+    cur.execute("INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)",
+                (profile_id_parent, "Dr. Sarah Connor", "City General Hospital", appt_dt_2, "Cardiology Follow-up", 120))
+
     conn.commit()
     conn.close()
-    print("Successfully seeded demo user data.")
+    print("Successfully seeded demo user John Doe with john@gmail.com")
 
 if __name__ == '__main__':
     seed_demo_data()
