@@ -99,15 +99,18 @@
                 </div>
             </div>
             <div class="card-body p-0">
-                {% if upcoming_reminders %}
-                    {% for reminder in upcoming_reminders[:4] %}
+                {% if combined_schedule %}
+                    {% for item in combined_schedule[:4] %}
                     <div class="d-flex justify-content-between align-items-center p-3" style="border-bottom: 1px solid #f1f5f9;">
                         <div>
-                            <div class="fw-bold" style="font-size: 0.9rem; color: var(--slate);">{{ reminder.name }}</div>
-                            <div style="font-size: 0.75rem; color: var(--slate-light);">{{ reminder.note or "Scheduled Dose" }}</div>
+                            <div class="fw-bold" style="font-size: 0.9rem; color: var(--slate);">
+                                {% if item.type == 'appointment' %}<i class="bi bi-calendar-event me-1 text-primary"></i>{% endif %}
+                                {{ item.title }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--slate-light);">{{ item.subtitle }}</div>
                         </div>
                         <span class="badge" style="background: #eff6ff; color: var(--primary); border: 1px solid #bfdbfe;">
-                            {{ reminder.time | time_indian }}
+                            {{ item.time | time_indian }}
                         </span>
                     </div>
                     {% endfor %}

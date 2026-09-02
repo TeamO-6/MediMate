@@ -352,8 +352,12 @@ def appointments():
     db = get_db()
     if form.validate_on_submit():
         try:
-            dt_obj = datetime.combine(form.date.data, form.time.data)
-            db.execute('INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)', (profile_id, form.doctor_name.data, form.hospital.data, dt_obj, form.purpose.data, form.reminder_minutes_before.data))
+            dt_obj_naive = datetime.combine(form.date.data, form.time.data)
+            ist_tz = timezone(timedelta(hours=5, minutes=30))
+            dt_obj_ist = dt_obj_naive.replace(tzinfo=ist_tz)
+            dt_obj_utc = dt_obj_ist.astimezone(timezone.utc).replace(tzinfo=None)
+            
+            db.execute('INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)', (profile_id, form.doctor_name.data, form.hospital.data, dt_obj_utc, form.purpose.data, form.reminder_minutes_before.data))
             db.commit()
             flash('Appointment scheduled.', 'success')
             return redirect(url_for('appointments'))
@@ -607,6 +611,43 @@ def dashboard():
     
     adherence = calculate_and_save_adherence(profile_id)
     
+    # Get today's appointments
+    today_start_utc = current_time_ist.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+    today_end_utc = today_start_utc + timedelta(days=1)
+    
+    todays_appointments_raw = db.execute(
+        "SELECT * FROM appointments WHERE profile_id = ? AND date_time >= ? AND date_time < ?",
+        (profile_id, today_start_utc, today_end_utc)
+    ).fetchall()
+    
+    combined_schedule = []
+    
+    for rem in upcoming_reminders:
+        combined_schedule.append({
+            'type': 'medicine',
+            'title': rem['name'],
+            'subtitle': rem['note'] or "Scheduled Dose",
+            'time': rem['time'],
+            'sort_time': rem['time']
+        })
+        
+    for appt in todays_appointments_raw:
+        appt_dt = datetime.fromisoformat(appt['date_time'].replace('Z', '+00:00')) if isinstance(appt['date_time'], str) else appt['date_time']
+        if appt_dt.tzinfo is None:
+             appt_dt = appt_dt.replace(tzinfo=timezone.utc)
+        appt_ist = appt_dt.astimezone(ist_tz)
+        
+        if appt_ist >= current_time_ist:
+            combined_schedule.append({
+                'type': 'appointment',
+                'title': f"Appt: {appt['doctor_name']}",
+                'subtitle': appt['purpose'] or appt['hospital'],
+                'time': appt_ist.strftime('%H:%M'),
+                'sort_time': appt_ist.strftime('%H:%M')
+            })
+            
+    combined_schedule.sort(key=lambda x: x['sort_time'])
+
     upcoming_appointments = db.execute(
         "SELECT * FROM appointments WHERE profile_id = ? AND date_time > ? ORDER BY date_time ASC",
         (profile_id, datetime.now())
@@ -614,7 +655,7 @@ def dashboard():
     
     return render_template('dashboard.html', 
                         adherence=adherence,
-                        upcoming_reminders=upcoming_reminders,
+                        combined_schedule=combined_schedule,
                         due_now_reminders=due_now_reminders,
                         upcoming_appointments=upcoming_appointments,
                         low_stock_count=low_stock_count,
