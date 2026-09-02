@@ -34,16 +34,24 @@
         </div>
 
         {% if profile.is_manager %}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">Change Password</div>
-                <div class="card-body">
-                    <form method="POST">
-                        {{ password_form.hidden_tag() }}
-                        {{ render_field(password_form.current_password) }}
-                        {{ render_field(password_form.new_password) }}
-                        {{ render_field(password_form.confirm_new_password) }}
-                        <button type="submit" name="submit_password" class="btn btn-warning">Change Password</button>
-                    </form>
+            <div class="mb-4">
+                <button class="btn btn-outline-warning" type="button" data-bs-toggle="collapse" data-bs-target="#changePasswordCollapse" aria-expanded="{% if password_form.errors %}true{% else %}false{% endif %}" aria-controls="changePasswordCollapse">
+                    <i class="bi bi-key-fill me-1"></i> Change Password
+                </button>
+            </div>
+
+            <div class="collapse {% if password_form.errors %}show{% endif %}" id="changePasswordCollapse">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning bg-opacity-10 text-dark fw-bold">Change Password</div>
+                    <div class="card-body">
+                        <form method="POST">
+                            {{ password_form.hidden_tag() }}
+                            {{ render_field(password_form.current_password) }}
+                            {{ render_field(password_form.new_password) }}
+                            {{ render_field(password_form.confirm_new_password) }}
+                            <button type="submit" name="submit_password" class="btn btn-warning">Update Password</button>
+                        </form>
+                    </div>
                 </div>
             </div>
     
