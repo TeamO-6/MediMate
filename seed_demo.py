@@ -4,7 +4,8 @@ from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta, timezone
 
 def seed_demo_data():
-    db_path = 'c:/Users/laksh/OneDrive - Shiv Nadar University - Chennai/Others/Hackathons/SIH/FamilyHealthManager-main/healthcare.db'
+    # Use a path relative to the script location so it works on Render
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'healthcare.db')
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
