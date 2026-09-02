@@ -43,6 +43,7 @@
                             {% if record.report_file %}
                             <a href="{{ url_for('uploaded_file', profile_id=active_profile.id, filename=record.report_file) }}" class="btn btn-sm btn-info" target="_blank" title="View File"><i class="bi bi-eye"></i> View</a>
                             {% endif %}
+                            <a href="{{ url_for('edit_history', rec_id=record.id) }}" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
                             <form action="{{ url_for('delete_history', rec_id=record.id) }}" method="POST" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                             </form>

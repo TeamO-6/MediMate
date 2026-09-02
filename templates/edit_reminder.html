@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_formhelpers.html" import render_field %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="display-6"><i class="bi bi-pencil-square"></i> Edit Reminder</h1>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.medicine_id.label(class="form-label") }}
+                        {% if form.medicine_id.errors %}
+                            {{ form.medicine_id(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.medicine_id.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.medicine_id(class="form-select") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">{{ render_field(form.time) }}</div>
+                    <div class="mb-3">
+                        {{ form.days.label(class="form-label mb-2") }}
+                        <div class="d-flex flex-wrap {% if form.days.errors %}is-invalid{% endif %}" style="gap:0.5rem 1.25rem;">
+                            {% for subfield in form.days %}
+                            <div class="form-check">
+                                {{ subfield(class="form-check-input") }}
+                                {{ subfield.label(class="form-check-label", style="font-size:0.875rem;") }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.days.errors %}
+                            <div class="invalid-feedback d-block" style="font-size:0.8rem;">
+                                {% for error in form.days.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-4">{{ render_field(form.note) }}</div>
+                    <div class="mt-4">
+                        {{ form.submit(class="btn btn-primary", value="Update Reminder") }}
+                        <a href="{{ url_for('reminders') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

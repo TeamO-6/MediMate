@@ -318,6 +318,36 @@ def add_medicine():
         return redirect(url_for('medicines'))
     return render_template('add_medicine.html', form=form)
 
+@app.route('/edit_medicine/<int:med_id>', methods=['GET', 'POST'])
+@login_required
+def edit_medicine(med_id):
+    """Endpoint/Function to Handle Edit medicine."""
+    profile_id = session.get('active_profile_id')
+    if not profile_id: return redirect(url_for('profiles'))
+    db = get_db()
+    med = db.execute('SELECT * FROM medicines WHERE id = ? AND profile_id = ?', (med_id, profile_id)).fetchone()
+    if not med:
+        flash('Medicine not found.', 'danger')
+        return redirect(url_for('medicines'))
+    
+    form = MedicineForm()
+    if request.method == 'GET':
+        form.name.data = med['name']
+        form.current_stock.data = med['current_stock']
+        form.meal_timing.data = med['meal_timing']
+        form.meal_type.data = med['meal_type']
+        form.reason.data = med['reason']
+
+    if form.validate_on_submit():
+        db.execute('UPDATE medicines SET name = ?, current_stock = ?, meal_timing = ?, meal_type = ?, reason = ? WHERE id = ? AND profile_id = ?', 
+                   (form.name.data, form.current_stock.data, form.meal_timing.data, form.meal_type.data, form.reason.data, med_id, profile_id))
+        db.commit()
+        log_activity('edit_medicine', f"Updated medicine: {form.name.data}")
+        flash(f"{form.name.data} was successfully updated.", 'success')
+        return redirect(url_for('medicines'))
+        
+    return render_template('edit_medicine.html', form=form, med_name=med['name'])
+
 @app.route('/reminders', methods=['GET', 'POST'])
 @login_required
 def reminders():
@@ -342,6 +372,40 @@ def reminders():
     appointment_reminders = db.execute("SELECT id, doctor_name, hospital, date_time, reminder_minutes_before FROM appointments WHERE profile_id = ? AND date_time > ? ORDER BY date_time ASC", (profile_id, datetime.now())).fetchall()
     return render_template('reminders.html', form=form, medicine_reminders=medicine_reminders, appointment_reminders=appointment_reminders, medicines_data=json.dumps(medicines_data))
 
+@app.route('/edit_reminder/<int:rem_id>', methods=['GET', 'POST'])
+@login_required
+def edit_reminder(rem_id):
+    """Endpoint/Function to Handle Edit reminder."""
+    profile_id = session.get('active_profile_id')
+    if not profile_id: return redirect(url_for('profiles'))
+    db = get_db()
+    rem = db.execute('SELECT * FROM reminders WHERE id = ? AND profile_id = ?', (rem_id, profile_id)).fetchone()
+    if not rem:
+        flash('Reminder not found.', 'danger')
+        return redirect(url_for('reminders'))
+    
+    form = ReminderForm()
+    medicines = db.execute('SELECT id, name FROM medicines WHERE profile_id = ?', (profile_id,)).fetchall()
+    form.medicine_id.choices = [('', 'Select a medicine...')] + [(m['id'], m['name']) for m in medicines]
+    
+    if request.method == 'GET':
+        form.medicine_id.data = str(rem['medicine_id'])
+        form.time.data = datetime.strptime(rem['time'], '%H:%M').time() if rem['time'] else None
+        form.days.data = rem['days'].split(',') if rem['days'] else []
+        form.note.data = rem['note']
+
+    if form.validate_on_submit():
+        days_str = ",".join(form.days.data)
+        db.execute('UPDATE reminders SET medicine_id = ?, time = ?, days = ?, note = ? WHERE id = ? AND profile_id = ?', 
+                   (form.medicine_id.data, form.time.data.strftime('%H:%M'), days_str, form.note.data, rem_id, profile_id))
+        db.commit()
+        medicine_name = dict(form.medicine_id.choices).get(int(form.medicine_id.data))
+        log_activity('edit_reminder', f"Updated reminder for {medicine_name}")
+        flash('Reminder updated successfully!', 'success')
+        return redirect(url_for('reminders'))
+        
+    return render_template('edit_reminder.html', form=form)
+
 @app.route('/appointments', methods=['GET', 'POST'])
 @login_required
 def appointments():
@@ -365,6 +429,53 @@ def appointments():
             flash('Failed to schedule appointment. Please check your inputs.', 'danger')
     all_appointments = db.execute('SELECT * FROM appointments WHERE profile_id = ? ORDER BY date_time DESC', (profile_id,)).fetchall()
     return render_template('appointments.html', form=form, appointments=all_appointments)
+
+@app.route('/edit_appointment/<int:appt_id>', methods=['GET', 'POST'])
+@login_required
+def edit_appointment(appt_id):
+    """Endpoint/Function to Handle Edit appointment."""
+    profile_id = session.get('active_profile_id')
+    if not profile_id: return redirect(url_for('profiles'))
+    db = get_db()
+    appt = db.execute('SELECT * FROM appointments WHERE id = ? AND profile_id = ?', (appt_id, profile_id)).fetchone()
+    if not appt:
+        flash('Appointment not found.', 'danger')
+        return redirect(url_for('appointments'))
+    
+    form = AppointmentForm()
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+    
+    if request.method == 'GET':
+        form.doctor_name.data = appt['doctor_name']
+        form.hospital.data = appt['hospital']
+        form.purpose.data = appt['purpose']
+        form.reminder_minutes_before.data = appt['reminder_minutes_before']
+        
+        # Convert UTC from DB to IST for form
+        if appt['date_time']:
+            dt_obj_utc = datetime.fromisoformat(appt['date_time'].replace('Z', '+00:00')) if isinstance(appt['date_time'], str) else appt['date_time']
+            if dt_obj_utc.tzinfo is None:
+                dt_obj_utc = dt_obj_utc.replace(tzinfo=timezone.utc)
+            dt_obj_ist = dt_obj_utc.astimezone(ist_tz)
+            form.date.data = dt_obj_ist.date()
+            form.time.data = dt_obj_ist.time()
+
+    if form.validate_on_submit():
+        try:
+            dt_obj_naive = datetime.combine(form.date.data, form.time.data)
+            dt_obj_ist = dt_obj_naive.replace(tzinfo=ist_tz)
+            dt_obj_utc = dt_obj_ist.astimezone(timezone.utc).replace(tzinfo=None)
+            
+            db.execute('UPDATE appointments SET doctor_name = ?, hospital = ?, date_time = ?, purpose = ?, reminder_minutes_before = ? WHERE id = ? AND profile_id = ?', 
+                       (form.doctor_name.data, form.hospital.data, dt_obj_utc, form.purpose.data, form.reminder_minutes_before.data, appt_id, profile_id))
+            db.commit()
+            log_activity('edit_appointment', f"Updated appointment with {form.doctor_name.data}")
+            flash('Appointment updated successfully!', 'success')
+            return redirect(url_for('appointments'))
+        except Exception as e:
+            flash('Failed to update appointment. Please check your inputs.', 'danger')
+            
+    return render_template('edit_appointment.html', form=form)
 
 @app.route('/stats')
 @login_required
@@ -396,6 +507,35 @@ def emergency():
     contacts = db.execute('SELECT * FROM emergency_contacts WHERE profile_id = ?', (profile_id,)).fetchall()
     return render_template('emergency.html', form=form, contacts=contacts)
 
+@app.route('/edit_emergency/<int:cid>', methods=['GET', 'POST'])
+@login_required
+def edit_emergency(cid):
+    """Endpoint/Function to Handle Edit emergency contact."""
+    profile_id = session.get('active_profile_id')
+    if not profile_id: return redirect(url_for('profiles'))
+    db = get_db()
+    contact = db.execute('SELECT * FROM emergency_contacts WHERE id = ? AND profile_id = ?', (cid, profile_id)).fetchone()
+    if not contact:
+        flash('Emergency contact not found.', 'danger')
+        return redirect(url_for('emergency'))
+    
+    form = EmergencyContactForm()
+    
+    if request.method == 'GET':
+        form.name.data = contact['name']
+        form.relationship.data = contact['relationship']
+        form.phone.data = contact['phone']
+
+    if form.validate_on_submit():
+        db.execute('UPDATE emergency_contacts SET name = ?, relationship = ?, phone = ? WHERE id = ? AND profile_id = ?', 
+                   (form.name.data, form.relationship.data, form.phone.data, cid, profile_id))
+        db.commit()
+        log_activity('edit_emergency', f"Updated emergency contact: {form.name.data}")
+        flash('Emergency contact updated successfully!', 'success')
+        return redirect(url_for('emergency'))
+        
+    return render_template('edit_emergency.html', form=form)
+
 @app.route('/history', methods=['GET', 'POST'])
 @login_required
 def history():
@@ -417,6 +557,42 @@ def history():
         return redirect(url_for('history'))
     history_records = db.execute('SELECT * FROM medical_history WHERE profile_id = ? ORDER BY created_at DESC', (profile_id,)).fetchall()
     return render_template('history.html', form=form, records=history_records)
+
+@app.route('/edit_history/<int:rec_id>', methods=['GET', 'POST'])
+@login_required
+def edit_history(rec_id):
+    """Endpoint/Function to Handle Edit history."""
+    profile_id = session.get('active_profile_id')
+    if not profile_id: return redirect(url_for('profiles'))
+    db = get_db()
+    rec = db.execute('SELECT * FROM medical_history WHERE id = ? AND profile_id = ?', (rec_id, profile_id)).fetchone()
+    if not rec:
+        flash('Medical history record not found.', 'danger')
+        return redirect(url_for('history'))
+    
+    form = HistoryForm()
+    
+    if request.method == 'GET':
+        form.condition.data = rec['condition']
+        form.description.data = rec['description']
+
+    if form.validate_on_submit():
+        user_upload_folder = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], str(profile_id))
+        os.makedirs(user_upload_folder, exist_ok=True)
+        filename = rec['report_file'] # Keep old by default
+        
+        if form.report_file.data and allowed_file(form.report_file.data.filename):
+            filename = secure_filename(form.report_file.data.filename)
+            form.report_file.data.save(os.path.join(user_upload_folder, filename))
+            
+        db.execute('UPDATE medical_history SET `condition` = ?, description = ?, report_file = ? WHERE id = ? AND profile_id = ?', 
+                   (form.condition.data, form.description.data, filename, rec_id, profile_id))
+        db.commit()
+        log_activity('edit_history', f"Updated medical history record: {form.condition.data}")
+        flash('Medical history record updated successfully!', 'success')
+        return redirect(url_for('history'))
+        
+    return render_template('edit_history.html', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

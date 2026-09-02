@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_formhelpers.html" import render_field %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="display-6"><i class="bi bi-pencil-square"></i> Edit Appointment</h1>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">{{ render_field(form.doctor_name) }}</div>
+                    <div class="mb-3">{{ render_field(form.hospital) }}</div>
+                    <div class="row mb-3">
+                        <div class="col-6">{{ render_field(form.date) }}</div>
+                        <div class="col-6">{{ render_field(form.time) }}</div>
+                    </div>
+                    <div class="mb-3">{{ render_field(form.purpose) }}</div>
+                    <div class="mb-4">{{ render_field(form.reminder_minutes_before) }}</div>
+                    <div class="mt-4">
+                        {{ form.submit(class="btn btn-primary", value="Update Appointment") }}
+                        <a href="{{ url_for('appointments') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
