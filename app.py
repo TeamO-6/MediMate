@@ -671,14 +671,12 @@ def manage_profile(profile_id):
         flash("Profile not found or access denied.", "danger")
         return redirect(url_for('profiles'))
     
-    form = ProfileForm(obj=profile_data)
+    form = ProfileForm(
+        profile_name=profile_data['profile_name'],
+        date_of_birth=profile_data['date_of_birth'].strftime('%d-%m-%Y') if profile_data['date_of_birth'] else '',
+        gender=profile_data['gender']
+    )
     password_form = ChangePasswordForm()
-
-    if request.method == 'GET':
-        form.profile_name.data = profile_data['profile_name']
-        if profile_data['date_of_birth']:
-            form.date_of_birth.data = profile_data['date_of_birth'].strftime('%d-%m-%Y')
-        form.gender.data = profile_data['gender']
 
     if form.validate_on_submit() and 'submit_profile' in request.form:
         dob_obj = None
