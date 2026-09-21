@@ -1143,6 +1143,7 @@ def intake_log():
     
     to_take_now = []
     to_take_later = []
+    missed_doses = []
     
     for rem in today_reminders:
         if rem['medicine_id'] in taken_today_ids:
@@ -1151,7 +1152,12 @@ def intake_log():
         reminder_time = datetime.strptime(rem['time'], '%H:%M').time()
         reminder_datetime_ist = datetime.combine(current_time_ist.date(), reminder_time).replace(tzinfo=ist_tz)
         
-        if reminder_datetime_ist <= current_time_ist + timedelta(minutes=30):
+        lower_bound = current_time_ist - timedelta(minutes=30)
+        upper_bound = current_time_ist + timedelta(minutes=30)
+        
+        if reminder_datetime_ist < lower_bound:
+            missed_doses.append(rem)
+        elif lower_bound <= reminder_datetime_ist <= upper_bound:
             to_take_now.append(rem)
         else:
             to_take_later.append(rem)
@@ -1160,6 +1166,7 @@ def intake_log():
                            taken_medicines=taken_medicines, 
                            to_take_now=to_take_now, 
                            to_take_later=to_take_later,
+                           missed_doses=missed_doses,
                            time_filter=time_filter,
                            filter_label=filter_label)
 
