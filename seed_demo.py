@@ -10,7 +10,7 @@ def seed_demo_data():
     cur = conn.cursor()
 
     # 1. Create Demo User
-    email = 'john@gmail.com'
+    email = 'rahul@gmail.com'
     # Check if user already exists
     cur.execute("SELECT id FROM users WHERE email = ?", (email,))
     existing_user = cur.fetchone()
@@ -26,18 +26,18 @@ def seed_demo_data():
 
     password_hash = generate_password_hash('123456')
     cur.execute("INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)", 
-                ("John Doe", email, password_hash))
+                ("Rahul Sharma", email, password_hash))
     user_id = cur.lastrowid
 
     # 2. Create Profiles
     # Manager Profile (Self)
     cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)",
-                (user_id, "John Doe", "1985-05-15", "Male", 1))
+                (user_id, "Rahul Sharma", "1985-05-15", "Male", 1))
     profile_id_self = cur.lastrowid
 
     # Dependent Profile (Parent)
     cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)",
-                (user_id, "Jane Doe (Mother)", "1955-10-22", "Female", 0))
+                (user_id, "Sunita Sharma (Mother)", "1955-10-22", "Female", 0))
     profile_id_parent = cur.lastrowid
 
     # 3. Add Medicines & Reminders for Self
@@ -72,7 +72,7 @@ def seed_demo_data():
 
     # 4. Add Medicines & Reminders for Parent
     cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (profile_id_parent, "Lisinopril", 15, "Before Meal", "Breakfast", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Blood Pressure"))
+                (profile_id_parent, "Telmisartan", 15, "Before Meal", "Breakfast", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Blood Pressure"))
     med_parent_1 = cur.lastrowid
     cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
                 (profile_id_parent, med_parent_1, "08:00", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Important"))
@@ -85,15 +85,15 @@ def seed_demo_data():
 
     # 5. Add Medical History
     cur.execute("INSERT INTO medical_history (profile_id, condition, description) VALUES (?, ?, ?)",
-                (profile_id_parent, "Hypertension", "Diagnosed in 2015. Controlled with Lisinopril."))
+                (profile_id_parent, "Hypertension", "Diagnosed in 2015. Controlled with Telmisartan."))
     cur.execute("INSERT INTO medical_history (profile_id, condition, description) VALUES (?, ?, ?)",
                 (profile_id_parent, "Type 2 Diabetes", "Diagnosed in 2018. Monitored regularly."))
 
     # 6. Add Emergency Contacts
     cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",
-                (profile_id_parent, "Dr. Smith", "Primary Care Physician", "555-0198"))
+                (profile_id_parent, "Dr. Ramesh Gupta", "Primary Care Physician", "+91 9876543210"))
     cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",
-                (profile_id_self, "Mary Doe", "Spouse", "555-0123"))
+                (profile_id_self, "Priya Sharma", "Spouse", "+91 9123456789"))
 
     # 7. Add Some Fake Adherence/Intake Data
     today = datetime.now()
@@ -113,16 +113,16 @@ def seed_demo_data():
     # Appointment for self later today
     appt_dt_1 = (now_ist + timedelta(hours=4)).replace(tzinfo=timezone(timedelta(hours=5, minutes=30))).astimezone(timezone.utc).replace(tzinfo=None)
     cur.execute("INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)",
-                (profile_id_self, "Dr. John Watson", "St. Mary's Clinic", appt_dt_1, "General Checkup", 60))
+                (profile_id_self, "Dr. Anil Kumar", "Apollo Hospital", appt_dt_1, "General Checkup", 60))
 
     # Appointment for parent tomorrow
     appt_dt_2 = (now_ist + timedelta(days=1, hours=2)).replace(tzinfo=timezone(timedelta(hours=5, minutes=30))).astimezone(timezone.utc).replace(tzinfo=None)
     cur.execute("INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)",
-                (profile_id_parent, "Dr. Sarah Connor", "City General Hospital", appt_dt_2, "Cardiology Follow-up", 120))
+                (profile_id_parent, "Dr. Meena Iyer", "Fortis Healthcare", appt_dt_2, "Cardiology Follow-up", 120))
 
     conn.commit()
     conn.close()
-    print("Successfully seeded demo user John Doe with john@gmail.com")
+    print("Successfully seeded demo user Rahul Sharma with rahul@gmail.com")
 
 if __name__ == '__main__':
     seed_demo_data()
