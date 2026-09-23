@@ -1,145 +1,112 @@
+import json
 import sqlite3
 import os
 from werkzeug.security import generate_password_hash
-from datetime import datetime, timedelta, timezone
 from PIL import Image
 
 def create_demo_file(profile_id, filename, file_type):
     upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', str(profile_id))
     os.makedirs(upload_dir, exist_ok=True)
     filepath = os.path.join(upload_dir, filename)
-    if file_type == 'image':
-        img = Image.new('RGB', (200, 200), color=(73, 109, 137))
-        img.save(filepath)
-    elif file_type == 'pdf':
-        with open(filepath, 'w') as f:
-            f.write("This is a dummy medical report for the demo.")
+    if not os.path.exists(filepath):
+        if file_type == 'image':
+            img = Image.new('RGB', (200, 200), color=(73, 109, 137))
+            img.save(filepath)
+        elif file_type == 'pdf':
+            with open(filepath, 'w') as f:
+                f.write('This is a dummy medical report for the demo.')
 
 def seed_demo_data():
-    # Use a path relative to the script location so it works on Render
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'healthcare.db')
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
-    # 1. Create Demo User
     email = 'rahul@gmail.com'
-    # Check if user already exists
-    cur.execute("SELECT id FROM users WHERE email = ?", (email,))
+    cur.execute('SELECT id FROM users WHERE email = ?', (email,))
     existing_user = cur.fetchone()
     if existing_user:
-        print("Demo user already exists. Deleting to recreate...")
+        print('Demo user already exists. Deleting to recreate...')
         user_id = existing_user[0]
-        cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
-        # Foreign key constraints (if ON DELETE CASCADE is properly set up in DB) might handle this, but let's be safe:
-        # Actually SQLite doesn't enforce PRAGMA foreign_keys = ON by default in standard connect unless specified, 
-        # so let's delete manually or assume it's okay.
-        # Actually, let's just let it be and use a clean insert.
-        cur.execute("DELETE FROM profiles WHERE manager_user_id = ?", (user_id,))
+        cur.execute('DELETE FROM users WHERE id = ?', (user_id,))
+        cur.execute('DELETE FROM profiles WHERE manager_user_id = ?', (user_id,))
 
     password_hash = generate_password_hash('123456')
-    cur.execute("INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)", 
-                ("Rahul Sharma", email, password_hash))
+    cur.execute('INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)', 
+                ('Rahul Sharma', email, password_hash))
     user_id = cur.lastrowid
 
-    # 2. Create Profiles
-    # Manager Profile (Self)
-    cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager, profile_picture) VALUES (?, ?, ?, ?, ?, ?)",
-                (user_id, "Rahul Sharma", "1985-05-15", "Male", 1, "demo_profile.jpg"))
-    profile_id_self = cur.lastrowid
-    create_demo_file(profile_id_self, "demo_profile.jpg", "image")
+    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'demo_data.json')
+    with open(json_path, 'r') as f:
+        data = json.load(f)
 
-    # Dependent Profile (Parent)
-    cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager, profile_picture) VALUES (?, ?, ?, ?, ?, ?)",
-                (user_id, "Sunita Sharma (Mother)", "1955-10-22", "Female", 0, "demo_parent.jpg"))
-    profile_id_parent = cur.lastrowid
-    create_demo_file(profile_id_parent, "demo_parent.jpg", "image")
+    profile_id_map = {}
+    medicine_id_map = {}
 
-    # 3. Add Medicines & Reminders for Self
-    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (profile_id_self, "Vitamin D3", 30, "After Meal", "Breakfast", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Supplement"))
-    med_self_1 = cur.lastrowid
-    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
-                (profile_id_self, med_self_1, "09:00", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Take with milk"))
-
-    now_ist = datetime.now()
-    
-    # Medicine 2 (To Take Now)
-    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (profile_id_self, "Omega-3 Fish Oil", 60, "With Meal", "Lunch", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Heart Health"))
-    med_self_2 = cur.lastrowid
-    past_due_time = (now_ist - timedelta(minutes=10)).strftime('%H:%M')
-    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
-                (profile_id_self, med_self_2, past_due_time, "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Swallow whole"))
-
-    # Medicine 3 (To Take Later)
-    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (profile_id_self, "Melatonin", 15, "Before Sleep", "Dinner", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Sleep Aid"))
-    med_self_3 = cur.lastrowid
-    later_time = (now_ist + timedelta(hours=2)).strftime('%H:%M')
-    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
-                (profile_id_self, med_self_3, later_time, "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "30 mins before bed"))
-
-    # Add Intake Log for Vitamin D3 (Already Taken Today)
-    taken_time = now_ist.replace(hour=9, minute=5, second=0).strftime('%Y-%m-%d %H:%M:%S')
-    cur.execute("INSERT INTO medicine_intake (profile_id, medicine_id, taken_at) VALUES (?, ?, ?)",
-                (profile_id_self, med_self_1, taken_time))
-
-    # 4. Add Medicines & Reminders for Parent
-    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (profile_id_parent, "Telmisartan", 15, "Before Meal", "Breakfast", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Blood Pressure"))
-    med_parent_1 = cur.lastrowid
-    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
-                (profile_id_parent, med_parent_1, "08:00", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Important"))
-
-    cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (profile_id_parent, "Metformin", 50, "After Meal", "Dinner", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Diabetes"))
-    med_parent_2 = cur.lastrowid
-    cur.execute("INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)",
-                (profile_id_parent, med_parent_2, "20:00", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Take with water"))
-
-    # 5. Add Medical History
-    cur.execute("INSERT INTO medical_history (profile_id, condition, description, report_file) VALUES (?, ?, ?, ?)",
-                (profile_id_parent, "Hypertension", "Diagnosed in 2015. Controlled with Telmisartan.", "hypertension_report.pdf"))
-    create_demo_file(profile_id_parent, "hypertension_report.pdf", "pdf")
-    
-    cur.execute("INSERT INTO medical_history (profile_id, condition, description, report_file) VALUES (?, ?, ?, ?)",
-                (profile_id_parent, "Type 2 Diabetes", "Diagnosed in 2018. Monitored regularly.", "diabetes_report.pdf"))
-    create_demo_file(profile_id_parent, "diabetes_report.pdf", "pdf")
-
-    # 6. Add Emergency Contacts
-    cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",
-                (profile_id_parent, "Dr. Ramesh Gupta", "Primary Care Physician", "+91 9876543210"))
-    cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",
-                (profile_id_self, "Priya Sharma", "Spouse", "+91 9123456789"))
-
-    # 7. Add Some Fake Adherence/Intake Data
-    today = datetime.now()
-    for i in range(7):
-        past_date = today - timedelta(days=i)
-        date_str = past_date.strftime('%Y-%m-%d')
-        # Parent Adherence
-        percent = 100 if i % 3 != 0 else 50
-        cur.execute("INSERT INTO adherence (profile_id, date, percentage) VALUES (?, ?, ?)",
-                    (profile_id_parent, date_str, percent))
+    for profile_key, profile_data in data.items():
+        pd = profile_data['profile_details']
+        cur.execute('INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager, profile_picture) VALUES (?, ?, ?, ?, ?, ?)',
+                    (user_id, pd['profile_name'], pd['date_of_birth'], pd['gender'], pd['is_manager'], pd.get('profile_picture')))
+        new_prof_id = cur.lastrowid
         
-        # Self Adherence (100%)
-        cur.execute("INSERT INTO adherence (profile_id, date, percentage) VALUES (?, ?, ?)",
-                    (profile_id_self, date_str, 100))
+        # Map old profile ID if possible
+        old_prof_id = None
+        if len(profile_data.get('medicines', [])) > 0:
+            old_prof_id = profile_data['medicines'][0]['profile_id']
+        elif len(profile_data.get('medical_history', [])) > 0:
+            old_prof_id = profile_data['medical_history'][0]['profile_id']
+            
+        if old_prof_id is not None:
+            profile_id_map[old_prof_id] = new_prof_id
 
-    # 8. Add Appointments
-    # Appointment for self later today
-    appt_dt_1 = (now_ist + timedelta(hours=4)).replace(tzinfo=timezone(timedelta(hours=5, minutes=30))).astimezone(timezone.utc).replace(tzinfo=None)
-    cur.execute("INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)",
-                (profile_id_self, "Dr. Anil Kumar", "Apollo Hospital", appt_dt_1, "General Checkup", 60))
+        if pd.get('profile_picture'):
+            create_demo_file(new_prof_id, pd['profile_picture'], 'image')
 
-    # Appointment for parent tomorrow
-    appt_dt_2 = (now_ist + timedelta(days=1, hours=2)).replace(tzinfo=timezone(timedelta(hours=5, minutes=30))).astimezone(timezone.utc).replace(tzinfo=None)
-    cur.execute("INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, reminder_minutes_before) VALUES (?, ?, ?, ?, ?, ?)",
-                (profile_id_parent, "Dr. Meena Iyer", "Fortis Healthcare", appt_dt_2, "Cardiology Follow-up", 120))
+        for med in profile_data.get('medicines', []):
+            cur.execute('INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                        (new_prof_id, med['name'], med['current_stock'], med['meal_timing'], med['meal_type'], med['days_to_take'], med['reason'], med['created_at']))
+            medicine_id_map[med['id']] = cur.lastrowid
+
+        for rem in profile_data.get('reminders', []):
+            new_med_id = medicine_id_map.get(rem['medicine_id'])
+            cur.execute('INSERT INTO reminders (profile_id, medicine_id, time, days, note) VALUES (?, ?, ?, ?, ?)',
+                        (new_prof_id, new_med_id, rem['time'], rem['days'], rem['note']))
+
+        for mh in profile_data.get('medical_history', []):
+            cur.execute('INSERT INTO medical_history (profile_id, condition, description, report_file, created_at) VALUES (?, ?, ?, ?, ?)',
+                        (new_prof_id, mh['condition'], mh['description'], mh.get('report_file'), mh['created_at']))
+            if mh.get('report_file'):
+                ftype = 'pdf' if mh['report_file'].endswith('.pdf') else 'image'
+                create_demo_file(new_prof_id, mh['report_file'], ftype)
+
+        for appt in profile_data.get('appointments', []):
+            cur.execute('INSERT INTO appointments (profile_id, doctor_name, hospital, date_time, purpose, notes, reminder_minutes_before, reminder_sent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                        (new_prof_id, appt['doctor_name'], appt['hospital'], appt['date_time'], appt['purpose'], appt['notes'], appt['reminder_minutes_before'], appt['reminder_sent']))
+
+        for ec in profile_data.get('emergency_contacts', []):
+            cur.execute('INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)',
+                        (new_prof_id, ec['name'], ec['relationship'], ec['phone']))
+
+        for mi in profile_data.get('medicine_intake', []):
+            new_med_id = medicine_id_map.get(mi['medicine_id'])
+            cur.execute('INSERT INTO medicine_intake (profile_id, medicine_id, taken_at) VALUES (?, ?, ?)',
+                        (new_prof_id, new_med_id, mi['taken_at']))
+                        
+        for su in profile_data.get('stock_updates', []):
+            new_med_id = medicine_id_map.get(su['medicine_id'])
+            cur.execute('INSERT INTO stock_updates (profile_id, medicine_id, change, updated_at) VALUES (?, ?, ?, ?)',
+                        (new_prof_id, new_med_id, su['change'], su['updated_at']))
+
+        for ra in profile_data.get('recent_activities', []):
+            cur.execute('INSERT INTO recent_activities (profile_id, activity_type, description, timestamp) VALUES (?, ?, ?, ?)',
+                        (new_prof_id, ra['activity_type'], ra['description'], ra['timestamp']))
+
+        for ad in profile_data.get('adherence', []):
+            cur.execute('INSERT INTO adherence (profile_id, date, percentage) VALUES (?, ?, ?)',
+                        (new_prof_id, ad['date'], ad['percentage']))
 
     conn.commit()
     conn.close()
-    print("Successfully seeded demo user Rahul Sharma with rahul@gmail.com")
+    print('Successfully seeded demo user from JSON')
 
 if __name__ == '__main__':
     seed_demo_data()

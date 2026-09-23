@@ -1,0 +1,395 @@
+{
+    "Rahul Sharma": {
+        "profile_details": {
+            "profile_name": "Rahul Sharma",
+            "date_of_birth": "1985-09-03",
+            "gender": "Male",
+            "profile_picture": "Screenshot_2026-09-23_173239.png",
+            "is_manager": 1
+        },
+        "medicines": [
+            {
+                "id": 6,
+                "profile_id": 3,
+                "name": "Vitamin D3",
+                "current_stock": 30,
+                "meal_timing": "After Meal",
+                "meal_type": "Breakfast",
+                "days_to_take": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "reason": "Supplement",
+                "created_at": "2026-09-23 09:21:52"
+            },
+            {
+                "id": 7,
+                "profile_id": 3,
+                "name": "Omega-3 Fish Oil",
+                "current_stock": 60,
+                "meal_timing": "With Meal",
+                "meal_type": "Lunch",
+                "days_to_take": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "reason": "Heart Health",
+                "created_at": "2026-09-23 09:21:52"
+            },
+            {
+                "id": 8,
+                "profile_id": 3,
+                "name": "Melatonin",
+                "current_stock": 15,
+                "meal_timing": "Before Sleep",
+                "meal_type": "Dinner",
+                "days_to_take": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "reason": "Sleep Aid",
+                "created_at": "2026-09-23 09:21:52"
+            },
+            {
+                "id": 11,
+                "profile_id": 3,
+                "name": "Amlodipine",
+                "current_stock": 90,
+                "meal_timing": "After",
+                "meal_type": "Breakfast",
+                "days_to_take": null,
+                "reason": "Blood Pressure",
+                "created_at": "2026-09-23 12:08:11"
+            },
+            {
+                "id": 12,
+                "profile_id": 3,
+                "name": "Metformin",
+                "current_stock": 5,
+                "meal_timing": "After",
+                "meal_type": "Dinner",
+                "days_to_take": null,
+                "reason": "Blood Sugar",
+                "created_at": "2026-09-23 12:09:23"
+            }
+        ],
+        "reminders": [
+            {
+                "id": 6,
+                "profile_id": 3,
+                "medicine_id": 6,
+                "time": "09:00",
+                "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "note": "Take with milk"
+            },
+            {
+                "id": 7,
+                "profile_id": 3,
+                "medicine_id": 7,
+                "time": "14:41",
+                "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "note": "Swallow whole"
+            },
+            {
+                "id": 8,
+                "profile_id": 3,
+                "medicine_id": 8,
+                "time": "16:51",
+                "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "note": "30 mins before bed"
+            },
+            {
+                "id": 11,
+                "profile_id": 3,
+                "medicine_id": 11,
+                "time": "09:30",
+                "days": "Mon,Wed,Fri,Sun",
+                "note": "Blood Pressure"
+            },
+            {
+                "id": 12,
+                "profile_id": 3,
+                "medicine_id": 12,
+                "time": "22:45",
+                "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "note": "Take just before sleep"
+            }
+        ],
+        "medical_history": [
+            {
+                "id": 5,
+                "profile_id": 3,
+                "condition": "ECG",
+                "description": "ECG Test",
+                "report_file": "Screenshot_2026-09-23_174524.png",
+                "created_at": "2026-09-23 12:15:40"
+            }
+        ],
+        "appointments": [
+            {
+                "id": 3,
+                "profile_id": 3,
+                "doctor_name": "Dr. Anil Kumar",
+                "hospital": "Apollo Hospital",
+                "date_time": "2026-09-23 13:21:52.343988",
+                "purpose": "General Checkup",
+                "notes": null,
+                "reminder_minutes_before": 60,
+                "reminder_sent": 0
+            },
+            {
+                "id": 5,
+                "profile_id": 3,
+                "doctor_name": "Dr. Sudharsan",
+                "hospital": "Apollo Hospital",
+                "date_time": "2026-10-07 05:15:00",
+                "purpose": "Sugar Yearly Check",
+                "notes": null,
+                "reminder_minutes_before": 60,
+                "reminder_sent": 0
+            }
+        ],
+        "emergency_contacts": [
+            {
+                "id": 4,
+                "profile_id": 3,
+                "name": "Priya Sharma",
+                "relationship": "Spouse",
+                "phone": "+91 9123456789"
+            }
+        ],
+        "medicine_intake": [
+            {
+                "id": 2,
+                "profile_id": 3,
+                "medicine_id": 6,
+                "taken_at": "2026-09-23 09:05:00"
+            }
+        ],
+        "stock_updates": [],
+        "recent_activities": [
+            {
+                "id": 1,
+                "profile_id": 3,
+                "activity_type": "profile_update",
+                "description": "Updated profile for Rahul Sharma",
+                "timestamp": "2026-09-23 11:57:39"
+            },
+            {
+                "id": 2,
+                "profile_id": 3,
+                "activity_type": "profile_update",
+                "description": "Updated profile for Rahul Sharma",
+                "timestamp": "2026-09-23 12:03:08"
+            },
+            {
+                "id": 3,
+                "profile_id": 3,
+                "activity_type": "add_medicine",
+                "description": "Added medicine: Amlodipine",
+                "timestamp": "2026-09-23 12:08:11"
+            },
+            {
+                "id": 4,
+                "profile_id": 3,
+                "activity_type": "add_medicine",
+                "description": "Added medicine: Metformin",
+                "timestamp": "2026-09-23 12:09:23"
+            },
+            {
+                "id": 5,
+                "profile_id": 3,
+                "activity_type": "set_reminder",
+                "description": "Set reminder for Amlodipine",
+                "timestamp": "2026-09-23 12:12:20"
+            },
+            {
+                "id": 6,
+                "profile_id": 3,
+                "activity_type": "set_reminder",
+                "description": "Set reminder for Metformin",
+                "timestamp": "2026-09-23 12:12:51"
+            },
+            {
+                "id": 7,
+                "profile_id": 3,
+                "activity_type": "generate_qr",
+                "description": "Generated a shareable QR code",
+                "timestamp": "2026-09-23 12:20:27"
+            }
+        ],
+        "adherence": [
+            {
+                "id": 28,
+                "profile_id": 3,
+                "date": "2026-09-17",
+                "percentage": 100
+            },
+            {
+                "id": 26,
+                "profile_id": 3,
+                "date": "2026-09-18",
+                "percentage": 100
+            },
+            {
+                "id": 24,
+                "profile_id": 3,
+                "date": "2026-09-19",
+                "percentage": 100
+            },
+            {
+                "id": 22,
+                "profile_id": 3,
+                "date": "2026-09-20",
+                "percentage": 100
+            },
+            {
+                "id": 20,
+                "profile_id": 3,
+                "date": "2026-09-21",
+                "percentage": 100
+            },
+            {
+                "id": 18,
+                "profile_id": 3,
+                "date": "2026-09-22",
+                "percentage": 100
+            },
+            {
+                "id": 36,
+                "profile_id": 3,
+                "date": "2026-09-23",
+                "percentage": 25
+            }
+        ]
+    },
+    "Sunita Sharma (Mother)": {
+        "profile_details": {
+            "profile_name": "Sunita Sharma (Mother)",
+            "date_of_birth": "1955-10-22",
+            "gender": "Female",
+            "profile_picture": "demo_parent.jpg",
+            "is_manager": 0
+        },
+        "medicines": [
+            {
+                "id": 9,
+                "profile_id": 4,
+                "name": "Telmisartan",
+                "current_stock": 15,
+                "meal_timing": "Before Meal",
+                "meal_type": "Breakfast",
+                "days_to_take": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "reason": "Blood Pressure",
+                "created_at": "2026-09-23 09:21:52"
+            },
+            {
+                "id": 10,
+                "profile_id": 4,
+                "name": "Metformin",
+                "current_stock": 50,
+                "meal_timing": "After Meal",
+                "meal_type": "Dinner",
+                "days_to_take": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "reason": "Diabetes",
+                "created_at": "2026-09-23 09:21:52"
+            }
+        ],
+        "reminders": [
+            {
+                "id": 9,
+                "profile_id": 4,
+                "medicine_id": 9,
+                "time": "08:00",
+                "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "note": "Important"
+            },
+            {
+                "id": 10,
+                "profile_id": 4,
+                "medicine_id": 10,
+                "time": "20:00",
+                "days": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+                "note": "Take with water"
+            }
+        ],
+        "medical_history": [
+            {
+                "id": 3,
+                "profile_id": 4,
+                "condition": "Hypertension",
+                "description": "Diagnosed in 2015. Controlled with Telmisartan.",
+                "report_file": "hypertension_report.pdf",
+                "created_at": "2026-09-23 09:21:52"
+            },
+            {
+                "id": 4,
+                "profile_id": 4,
+                "condition": "Type 2 Diabetes",
+                "description": "Diagnosed in 2018. Monitored regularly.",
+                "report_file": "diabetes_report.pdf",
+                "created_at": "2026-09-23 09:21:52"
+            }
+        ],
+        "appointments": [
+            {
+                "id": 4,
+                "profile_id": 4,
+                "doctor_name": "Dr. Meena Iyer",
+                "hospital": "Fortis Healthcare",
+                "date_time": "2026-09-24 11:21:52.343988",
+                "purpose": "Cardiology Follow-up",
+                "notes": null,
+                "reminder_minutes_before": 120,
+                "reminder_sent": 0
+            }
+        ],
+        "emergency_contacts": [
+            {
+                "id": 3,
+                "profile_id": 4,
+                "name": "Dr. Ramesh Gupta",
+                "relationship": "Primary Care Physician",
+                "phone": "+91 9876543210"
+            }
+        ],
+        "medicine_intake": [],
+        "stock_updates": [],
+        "recent_activities": [],
+        "adherence": [
+            {
+                "id": 27,
+                "profile_id": 4,
+                "date": "2026-09-17",
+                "percentage": 50
+            },
+            {
+                "id": 25,
+                "profile_id": 4,
+                "date": "2026-09-18",
+                "percentage": 100
+            },
+            {
+                "id": 23,
+                "profile_id": 4,
+                "date": "2026-09-19",
+                "percentage": 100
+            },
+            {
+                "id": 21,
+                "profile_id": 4,
+                "date": "2026-09-20",
+                "percentage": 50
+            },
+            {
+                "id": 19,
+                "profile_id": 4,
+                "date": "2026-09-21",
+                "percentage": 100
+            },
+            {
+                "id": 17,
+                "profile_id": 4,
+                "date": "2026-09-22",
+                "percentage": 100
+            },
+            {
+                "id": 35,
+                "profile_id": 4,
+                "date": "2026-09-23",
+                "percentage": 0
+            }
+        ]
+    }
+}
