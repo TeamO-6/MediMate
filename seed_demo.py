@@ -2,6 +2,18 @@ import sqlite3
 import os
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta, timezone
+from PIL import Image
+
+def create_demo_file(profile_id, filename, file_type):
+    upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', str(profile_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    filepath = os.path.join(upload_dir, filename)
+    if file_type == 'image':
+        img = Image.new('RGB', (200, 200), color=(73, 109, 137))
+        img.save(filepath)
+    elif file_type == 'pdf':
+        with open(filepath, 'w') as f:
+            f.write("This is a dummy medical report for the demo.")
 
 def seed_demo_data():
     # Use a path relative to the script location so it works on Render
@@ -31,14 +43,16 @@ def seed_demo_data():
 
     # 2. Create Profiles
     # Manager Profile (Self)
-    cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)",
-                (user_id, "Rahul Sharma", "1985-05-15", "Male", 1))
+    cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager, profile_picture) VALUES (?, ?, ?, ?, ?, ?)",
+                (user_id, "Rahul Sharma", "1985-05-15", "Male", 1, "demo_profile.jpg"))
     profile_id_self = cur.lastrowid
+    create_demo_file(profile_id_self, "demo_profile.jpg", "image")
 
     # Dependent Profile (Parent)
-    cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager) VALUES (?, ?, ?, ?, ?)",
-                (user_id, "Sunita Sharma (Mother)", "1955-10-22", "Female", 0))
+    cur.execute("INSERT INTO profiles (manager_user_id, profile_name, date_of_birth, gender, is_manager, profile_picture) VALUES (?, ?, ?, ?, ?, ?)",
+                (user_id, "Sunita Sharma (Mother)", "1955-10-22", "Female", 0, "demo_parent.jpg"))
     profile_id_parent = cur.lastrowid
+    create_demo_file(profile_id_parent, "demo_parent.jpg", "image")
 
     # 3. Add Medicines & Reminders for Self
     cur.execute("INSERT INTO medicines (profile_id, name, current_stock, meal_timing, meal_type, days_to_take, reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -84,10 +98,13 @@ def seed_demo_data():
                 (profile_id_parent, med_parent_2, "20:00", "Mon,Tue,Wed,Thu,Fri,Sat,Sun", "Take with water"))
 
     # 5. Add Medical History
-    cur.execute("INSERT INTO medical_history (profile_id, condition, description) VALUES (?, ?, ?)",
-                (profile_id_parent, "Hypertension", "Diagnosed in 2015. Controlled with Telmisartan."))
-    cur.execute("INSERT INTO medical_history (profile_id, condition, description) VALUES (?, ?, ?)",
-                (profile_id_parent, "Type 2 Diabetes", "Diagnosed in 2018. Monitored regularly."))
+    cur.execute("INSERT INTO medical_history (profile_id, condition, description, report_file) VALUES (?, ?, ?, ?)",
+                (profile_id_parent, "Hypertension", "Diagnosed in 2015. Controlled with Telmisartan.", "hypertension_report.pdf"))
+    create_demo_file(profile_id_parent, "hypertension_report.pdf", "pdf")
+    
+    cur.execute("INSERT INTO medical_history (profile_id, condition, description, report_file) VALUES (?, ?, ?, ?)",
+                (profile_id_parent, "Type 2 Diabetes", "Diagnosed in 2018. Monitored regularly.", "diabetes_report.pdf"))
+    create_demo_file(profile_id_parent, "diabetes_report.pdf", "pdf")
 
     # 6. Add Emergency Contacts
     cur.execute("INSERT INTO emergency_contacts (profile_id, name, relationship, phone) VALUES (?, ?, ?, ?)",

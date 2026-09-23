@@ -1033,6 +1033,10 @@ def export_data():
         history = db.execute('SELECT * FROM medical_history WHERE profile_id = ?', (profile_id,)).fetchall()
         appointments = db.execute('SELECT * FROM appointments WHERE profile_id = ?', (profile_id,)).fetchall()
         contacts = db.execute('SELECT * FROM emergency_contacts WHERE profile_id = ?', (profile_id,)).fetchall()
+        medicine_intake = db.execute('SELECT * FROM medicine_intake WHERE profile_id = ?', (profile_id,)).fetchall()
+        stock_updates = db.execute('SELECT * FROM stock_updates WHERE profile_id = ?', (profile_id,)).fetchall()
+        recent_activities = db.execute('SELECT * FROM recent_activities WHERE profile_id = ?', (profile_id,)).fetchall()
+        adherence = db.execute('SELECT * FROM adherence WHERE profile_id = ?', (profile_id,)).fetchall()
         
         full_export[profile_name] = {
             'profile_details': dict(profile),
@@ -1040,7 +1044,11 @@ def export_data():
             'reminders': [dict(r) for r in reminders],
             'medical_history': [dict(h) for h in history],
             'appointments': [dict(a) for a in appointments],
-            'emergency_contacts': [dict(c) for c in contacts]
+            'emergency_contacts': [dict(c) for c in contacts],
+            'medicine_intake': [dict(mi) for mi in medicine_intake],
+            'stock_updates': [dict(su) for su in stock_updates],
+            'recent_activities': [dict(ra) for ra in recent_activities],
+            'adherence': [dict(ad) for ad in adherence]
         }
         
         full_export[profile_name]['profile_details'].pop('id', None)
@@ -1252,7 +1260,7 @@ def seed_demo_account():
         from seed_demo import seed_demo_data
         seed_demo_data()
         flash("Demo account 'rahul@gmail.com' successfully seeded with all data!", "success")
-        return redirect(url_for('index'))
+        return redirect("https://medimate-iibi.onrender.com/")
     except Exception as e:
         return f"Error seeding data: {e}", 500
 
