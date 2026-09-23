@@ -128,7 +128,7 @@ def inject_global_data():
         return {}
     
     db = get_db()
-    profiles = db.execute("SELECT id, profile_name, is_manager FROM profiles WHERE manager_user_id = ? ORDER BY is_manager DESC, profile_name ASC", (current_user.id,)).fetchall()
+    profiles = db.execute("SELECT id, profile_name, is_manager, profile_picture FROM profiles WHERE manager_user_id = ? ORDER BY is_manager DESC, profile_name ASC", (current_user.id,)).fetchall()
     
     active_profile_id = session.get('active_profile_id')
     active_profile = next((p for p in profiles if p['id'] == active_profile_id), None)
