@@ -1251,8 +1251,8 @@ def seed_demo_account():
     try:
         from seed_demo import seed_demo_data
         seed_demo_data()
-        flash("Demo account 'john@gmail.com' successfully seeded with all data!", "success")
-        return redirect(url_for('login'))
+        flash("Demo account 'rahul@gmail.com' successfully seeded with all data!", "success")
+        return redirect(url_for('index'))
     except Exception as e:
         return f"Error seeding data: {e}", 500
 
