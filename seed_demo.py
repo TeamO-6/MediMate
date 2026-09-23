@@ -4,11 +4,23 @@ import os
 from werkzeug.security import generate_password_hash
 from PIL import Image
 
+import shutil
+
 def create_demo_file(profile_id, filename, file_type):
     upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', str(profile_id))
+    demo_assets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'demo_assets')
     os.makedirs(upload_dir, exist_ok=True)
     filepath = os.path.join(upload_dir, filename)
-    if not os.path.exists(filepath):
+    
+    # Check if real file exists in demo_assets (try with exact name or replacing _ with space)
+    real_file_path = os.path.join(demo_assets_dir, filename)
+    alt_file_path = os.path.join(demo_assets_dir, filename.replace('_', ' '))
+    
+    if os.path.exists(real_file_path):
+        shutil.copy2(real_file_path, filepath)
+    elif os.path.exists(alt_file_path):
+        shutil.copy2(alt_file_path, filepath)
+    elif not os.path.exists(filepath):
         if file_type == 'image':
             img = Image.new('RGB', (200, 200), color=(73, 109, 137))
             img.save(filepath)

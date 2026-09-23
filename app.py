@@ -775,6 +775,8 @@ def dashboard():
         ORDER BY r.time ASC LIMIT 5
     """, (profile_id, current_time_ist.strftime('%H:%M'), f'%{today_name}%', profile_id)).fetchall()
     
+    missed_doses_count = len([rem for rem in all_today_reminders if datetime.combine(current_time_ist.date(), datetime.strptime(rem['time'], '%H:%M').time()).replace(tzinfo=ist_tz) < (current_time_ist - timedelta(minutes=30))])
+    
     low_stock_count = db.execute('SELECT COUNT(id) FROM medicines WHERE profile_id = ? AND current_stock <= 5', (profile_id,)).fetchone()[0]
     meds_taken_today = db.execute("SELECT COUNT(id) FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes')", (profile_id,)).fetchone()[0]
     health_records_count = db.execute("SELECT COUNT(id) FROM medical_history WHERE profile_id = ?", (profile_id,)).fetchone()[0]
@@ -834,6 +836,7 @@ def dashboard():
                         adherence=adherence,
                         combined_schedule=combined_schedule,
                         due_now_reminders=due_now_reminders,
+                        missed_doses_count=missed_doses_count,
                         upcoming_appointments=upcoming_appointments,
                         low_stock_count=low_stock_count,
                         meds_taken_today=meds_taken_today,
