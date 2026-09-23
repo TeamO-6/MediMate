@@ -760,8 +760,11 @@ def dashboard():
         reminder_time = datetime.strptime(rem['time'], '%H:%M').time()
         reminder_datetime_ist = datetime.combine(current_time_ist.date(), reminder_time).replace(tzinfo=ist_tz)
         
-        # Check if the reminder is past due OR coming up in the next 15 minutes
-        if reminder_datetime_ist <= current_time_ist + timedelta(minutes=15):
+        # Check if the reminder is within ±30 minutes of current time
+        lower_bound = current_time_ist - timedelta(minutes=30)
+        upper_bound = current_time_ist + timedelta(minutes=30)
+        
+        if lower_bound <= reminder_datetime_ist <= upper_bound:
             due_now_reminders.append(rem)
 
     upcoming_reminders = db.execute("""
@@ -1137,38 +1140,59 @@ def intake_log():
     current_time_ist = datetime.now(ist_tz)
     today_name = current_time_ist.strftime('%a')
     
-    taken_today_ids = [m['medicine_id'] for m in db.execute(
-        "SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes')", 
-        (profile_id,)
-    ).fetchall()]
-    
-    today_reminders = db.execute("""
-        SELECT r.id, m.name, m.id as medicine_id, r.time 
+    if time_filter == 'today':
+        days_to_check = 1
+    elif time_filter == '7days':
+        days_to_check = 7
+    elif time_filter == '1month':
+        days_to_check = 30
+    else:
+        days_to_check = 30
+
+    all_reminders = db.execute("""
+        SELECT r.id, m.name, m.id as medicine_id, r.time, r.days 
         FROM reminders r JOIN medicines m ON r.medicine_id = m.id 
-        WHERE r.profile_id = ? AND r.days LIKE ?
-        ORDER BY r.time ASC
-    """, (profile_id, f'%{today_name}%')).fetchall()
-    
+        WHERE r.profile_id = ?
+    """, (profile_id,)).fetchall()
+
     to_take_now = []
     to_take_later = []
     missed_doses = []
     
-    for rem in today_reminders:
-        if rem['medicine_id'] in taken_today_ids:
-            continue
+    for i in range(days_to_check):
+        check_date = current_time_ist.date() - timedelta(days=i)
+        check_day_name = check_date.strftime('%a')
+        
+        taken_ids_on_date = [m['medicine_id'] for m in db.execute(
+            "SELECT medicine_id FROM medicine_intake WHERE profile_id = ? AND DATE(taken_at, '+5 hours', '+30 minutes') = ?", 
+            (profile_id, check_date.strftime('%Y-%m-%d'))
+        ).fetchall()]
+
+        for rem in all_reminders:
+            if check_day_name not in rem['days']:
+                continue
+                
+            if rem['medicine_id'] in taken_ids_on_date:
+                continue
+                
+            reminder_time = datetime.strptime(rem['time'], '%H:%M').time()
+            reminder_datetime_ist = datetime.combine(check_date, reminder_time).replace(tzinfo=ist_tz)
             
-        reminder_time = datetime.strptime(rem['time'], '%H:%M').time()
-        reminder_datetime_ist = datetime.combine(current_time_ist.date(), reminder_time).replace(tzinfo=ist_tz)
-        
-        lower_bound = current_time_ist - timedelta(minutes=30)
-        upper_bound = current_time_ist + timedelta(minutes=30)
-        
-        if reminder_datetime_ist < lower_bound:
-            missed_doses.append(rem)
-        elif lower_bound <= reminder_datetime_ist <= upper_bound:
-            to_take_now.append(rem)
-        else:
-            to_take_later.append(rem)
+            rem_dict = dict(rem)
+            rem_dict['date'] = check_date.strftime('%d %b %Y')
+            
+            if i == 0:
+                lower_bound = current_time_ist - timedelta(minutes=30)
+                upper_bound = current_time_ist + timedelta(minutes=30)
+                
+                if reminder_datetime_ist < lower_bound:
+                    missed_doses.append(rem_dict)
+                elif lower_bound <= reminder_datetime_ist <= upper_bound:
+                    to_take_now.append(rem_dict)
+                else:
+                    to_take_later.append(rem_dict)
+            else:
+                missed_doses.append(rem_dict)
 
     return render_template('intake_log.html', 
                            taken_medicines=taken_medicines, 

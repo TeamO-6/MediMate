@@ -24,8 +24,12 @@
 
             {% if active_profile %}
             <div class="sidebar-profile dropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                <div class="profile-avatar">
-                    {{ active_profile.profile_name[0]|upper }}
+                <div class="profile-avatar" style="padding:0; overflow:hidden;">
+                    {% if active_profile.profile_picture %}
+                        <img src="{{ url_for('uploaded_file', profile_id=active_profile.id, filename=active_profile.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='uploads/default.png') }}';">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='uploads/default.png') }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% endif %}
                 </div>
                 <div class="profile-info">
                     <div class="profile-name">{{ active_profile.profile_name }}</div>
@@ -89,8 +93,12 @@
             <div class="sidebar-footer">
                 {% if active_profile %}
                 <a href="{{ url_for('my_account') }}" class="d-flex align-items-center gap-2 mb-3 px-3 text-decoration-none" style="transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                    <div class="profile-avatar" style="width: 24px; height: 24px; font-size: 0.6rem;">
-                        {{ active_profile.profile_name[0]|upper }}
+                    <div class="profile-avatar" style="width: 24px; height: 24px; padding:0; overflow:hidden;">
+                        {% if active_profile.profile_picture %}
+                            <img src="{{ url_for('uploaded_file', profile_id=active_profile.id, filename=active_profile.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='uploads/default.png') }}';">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='uploads/default.png') }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% endif %}
                     </div>
                     <div class="d-flex flex-column" style="line-height:1.1">
                         <span class="text-white" style="font-size:0.75rem;font-weight:600;">{{ active_profile.profile_name }}</span>
